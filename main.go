@@ -125,39 +125,60 @@ func get(key string) {
 	}
 }
 
+func del(key string) {
+	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
+	cli, _ := clientv3.New(clientv3.Config{
+		DialTimeout: dialTimeout,
+		Endpoints:   []string{"0.0.0.0:2379"},
+	})
+	defer cli.Close()
+	kv := clientv3.NewKV(cli)
+
+	dresp, err := kv.Delete(ctx, key, clientv3.WithPrefix())
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(dresp.Deleted)
+}
+
+func q() {
+	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
+	cli, _ := clientv3.New(clientv3.Config{
+		DialTimeout: dialTimeout,
+		Endpoints:   []string{"0.0.0.0:2379"},
+	})
+	defer cli.Close()
+	kv := clientv3.NewKV(cli)
+
+	del := false
+	if del {
+		dresp, err := kv.Delete(ctx, "namespaces", clientv3.WithPrefix())
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(dresp.Deleted)
+	} else {
+		opts := []clientv3.OpOption{
+			clientv3.WithPrefix(),
+			clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend),
+			// clientv3.WithLimit(1),
+		}
+		gr, err := kv.Get(ctx, "namespaces", opts...)
+		if err != nil {
+			fmt.Println("err")
+			fmt.Println(err)
+			return
+		}
+
+		for _, item := range gr.Kvs {
+			fmt.Println(string(item.Key), string(item.Value))
+		}
+		fmt.Println(len(gr.Kvs))
+	}
+
+}
+
 func main() {
-	// ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
-	// cli, _ := clientv3.New(clientv3.Config{
-	// 	DialTimeout: dialTimeout,
-	// 	Endpoints:   []string{"0.0.0.0:2379"},
-	// })
-	// defer cli.Close()
-	// kv := clientv3.NewKV(cli)
-
-	// del := false
-	// if del {
-	// 	dresp, err := kv.Delete(ctx, "namespaces", clientv3.WithPrefix())
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// 	fmt.Println(dresp.Deleted)
-	// } else {
-	// 	opts := []clientv3.OpOption{
-	// 		clientv3.WithPrefix(),
-	// 		clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend),
-	// 		// clientv3.WithLimit(1),
-	// 	}
-	// 	gr, err := kv.Get(ctx, "topology", opts...)
-	// 	if err != nil {
-	// 		fmt.Println("err")
-	// 		fmt.Println(err)
-	// 		return
-	// 	}
-
-	// 	for _, item := range gr.Kvs {
-	// 		fmt.Println(string(item.Key), string(item.Value))
-	// 	}
-	// 	fmt.Println(len(gr.Kvs))
-	// }
-	get("topology/novisad/liman3/node2/configs")
+	get("topology/novisad/grbavica/node3/actions")
+	// del("topology/novisad/grbavica/node3/actions")
 }

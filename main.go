@@ -6,6 +6,7 @@ import (
 	rPb "github.com/c12s/scheme/core"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/protobuf/proto"
+	"github.com/hashicorp/vault/api"
 	"time"
 )
 
@@ -178,7 +179,44 @@ func q() {
 
 }
 
+func v() {
+	c, err := api.NewClient(&api.Config{
+		Address: "0.0.0.0:8200",
+	})
+	if err != nil {
+		fmt.Printf("Client: Failed to create Vault client: %v\n", err)
+		return
+	}
+
+	c.SetToken("myroot")
+	secretData := map[string]interface{}{
+		"value1": "world",
+		"foo1":   "bar",
+	}
+	resp, err1 := c.Logical().Write("mykv/data/mysecret3", secretData)
+	if err1 != nil {
+		fmt.Printf("Write: Failed to create Vault client: %v\n", err1)
+		return
+	}
+	fmt.Println(resp)
+
+	secretValues, err := c.Logical().Read("mykv/data/mysecret")
+	if err != nil {
+		fmt.Printf("Read: Failed to create Vault client: %v\n", err)
+		return
+	}
+	for propName, propValue := range secretValues.Data {
+		fmt.Printf(" - %s -> %v\n", propName, propValue)
+	}
+}
+
 func main() {
-	get("topology/novisad/grbavica/node3/actions")
+	// get("topology/novisad/grbavica/node3/actions")
+	// get("topology/novisad/liman3/node2/actions")
+
 	// del("topology/novisad/grbavica/node3/actions")
+	// del("topology/novisad/liman3/node2/actions")
+
+	// del("topology/novisad/liman3/node2/actions")
+	v()
 }

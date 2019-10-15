@@ -16,14 +16,14 @@ var (
 )
 
 const (
-	nodes = "topology/%s/%s/nodes"
+	nodes = "topology/regions/%s/%s/nodes"
 
 	//labels  = "topology/%s/%s/labels/%s"  //topology/regionid/clusterid/labels/nodeid
 
-	labels  = "topology/labels/%s/%s/%s"  //topology/labels/regionid/clusterid/nodeid
-	nodeid  = "topology/%s/%s/nodes/%s"   //topology/regionid/clusterid/nodes/nodeid
-	undone  = "topology/%s/%s/%s/undone"  //topology/regionid/clusterid/nodeid/undone
-	configs = "topology/%s/%s/%s/configs" //topology/regionid/clusterid/nodeid/configs
+	labels  = "topology/regions/labels/%s/%s/%s"  //topology/labels/regionid/clusterid/nodeid
+	nodeid  = "topology/regions/%s/%s/nodes/%s"   //topology/regionid/clusterid/nodes/nodeid
+	undone  = "topology/regions/%s/%s/%s/undone"  //topology/regionid/clusterid/nodeid/undone
+	configs = "topology/regions/%s/%s/%s/configs" //topology/regionid/clusterid/nodeid/configs
 
 	l1 = "l1:v1,l2:v2"
 	l2 = "l1:v1,l2:v2,l3:v3"
@@ -31,7 +31,7 @@ const (
 )
 
 func c() string {
-	configs := &rPb.KV{Extras: map[string]string{}}
+	configs := &rPb.KV{Extras: map[string]*rPb.KVData{}}
 	cData, err := proto.Marshal(configs)
 	if err != nil {
 		fmt.Println(err)
@@ -55,7 +55,7 @@ func key(rid, cid, nid, template string) string {
 	return fmt.Sprintf(template, rid, cid, nid)
 }
 
-func init_values() {
+func init_db() {
 	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
 	cli, _ := clientv3.New(clientv3.Config{
 		DialTimeout: dialTimeout,
@@ -83,22 +83,22 @@ func init_values() {
 	kv.Put(ctx, key("novisad", "liman3", "node3", labels), l3)
 
 	// Setup configs for nodes
-	kv.Put(ctx, key("novisad", "grbavica", "node1", configs), c())
-	kv.Put(ctx, key("novisad", "grbavica", "node2", configs), c())
-	kv.Put(ctx, key("novisad", "grbavica", "node3", configs), c())
+	// kv.Put(ctx, key("novisad", "grbavica", "node1", configs), c())
+	// kv.Put(ctx, key("novisad", "grbavica", "node2", configs), c())
+	// kv.Put(ctx, key("novisad", "grbavica", "node3", configs), c())
 
-	kv.Put(ctx, key("novisad", "liman3", "node1", configs), c())
-	kv.Put(ctx, key("novisad", "liman3", "node2", configs), c())
-	kv.Put(ctx, key("novisad", "liman3", "node3", configs), c())
+	// kv.Put(ctx, key("novisad", "liman3", "node1", configs), c())
+	// kv.Put(ctx, key("novisad", "liman3", "node2", configs), c())
+	// kv.Put(ctx, key("novisad", "liman3", "node3", configs), c())
 
 	// Setup undone for nodes
-	kv.Put(ctx, key("novisad", "grbavica", "node1", undone), u())
-	kv.Put(ctx, key("novisad", "grbavica", "node2", undone), u())
-	kv.Put(ctx, key("novisad", "grbavica", "node3", undone), u())
+	// kv.Put(ctx, key("novisad", "grbavica", "node1", undone), u())
+	// kv.Put(ctx, key("novisad", "grbavica", "node2", undone), u())
+	// kv.Put(ctx, key("novisad", "grbavica", "node3", undone), u())
 
-	kv.Put(ctx, key("novisad", "liman3", "node1", undone), u())
-	kv.Put(ctx, key("novisad", "liman3", "node2", undone), u())
-	kv.Put(ctx, key("novisad", "liman3", "node3", undone), u())
+	// kv.Put(ctx, key("novisad", "liman3", "node1", undone), u())
+	// kv.Put(ctx, key("novisad", "liman3", "node2", undone), u())
+	// kv.Put(ctx, key("novisad", "liman3", "node3", undone), u())
 }
 
 func get(key string) {
@@ -121,8 +121,9 @@ func get(key string) {
 		return
 	}
 	for _, item := range gr.Kvs {
-		fmt.Println(string(item.Key))
+		fmt.Println("KEY: ", string(item.Key))
 		fmt.Println(string(item.Value))
+		fmt.Println("")
 	}
 }
 
@@ -211,12 +212,14 @@ func v() {
 }
 
 func main() {
-	// get("topology/novisad/grbavica/node3/actions")
-	// get("topology/novisad/liman3/node2/actions")
+	get("topology/regions/actions")
+	// del("topology")
+	// get("topology/regions/novisad/liman3/node2/secrets")
 
 	// del("topology/novisad/grbavica/node3/actions")
 	// del("topology/novisad/liman3/node2/actions")
 
-	// del("topology/novisad/liman3/node2/actions")
-	v()
+	// del("topology/")
+	// v()
+	init_db()
 }

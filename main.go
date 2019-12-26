@@ -212,7 +212,8 @@ func v() {
 }
 
 func main() {
-	get("topology/regions/actions")
+	// get("trace")
+	get("topology/regions/novisad/grbavica/node3/configs")
 	// del("topology")
 	// get("topology/regions/novisad/liman3/node2/secrets")
 
@@ -221,5 +222,5 @@ func main() {
 
 	// del("topology/")
 	// v()
-	init_db()
+	// init_db()
 }

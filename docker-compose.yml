@@ -1,0 +1,185 @@
+version: "3.8"
+
+services:
+
+  magnetar:
+    build:
+      context: ..
+      dockerfile: magnetar/Dockerfile
+    image: magnetar
+    container_name: magnetar
+    hostname: ${MAGNETAR_HOSTNAME}
+    restart: on-failure
+    expose:
+      - ${MAGNETAR_PORT}
+    ports:
+      - ${MAGNETAR_PORT}:${MAGNETAR_PORT}
+    environment:
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
+      - MAGNETAR_ADDRESS=:${MAGNETAR_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+    networks:
+      - network
+    depends_on:
+      - nats
+      - etcd
+
+  oort:
+    build:
+      context: ..
+      dockerfile: oort/Dockerfile
+    image: oort
+    container_name: oort
+    hostname: ${OORT_HOSTNAME}
+    expose:
+      - ${OORT_PORT}
+    ports:
+      - ${OORT_PORT}:${OORT_PORT}
+    environment:
+      - OORT_PORT=${OORT_PORT}
+      - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
+      - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
+      - NEO4J_DBNAME=${NEO4J_DBNAME}
+      - NATS_HOSTNAME=${NATS_HOSTNAME}
+      - NATS_PORT=${NATS_PORT}
+    networks:
+      - network
+    depends_on:
+      - neo4j
+      - nats
+
+  kuiper:
+    build:
+      context: ..
+      dockerfile: kuiper/Dockerfile
+    image: kuiper
+    container_name: kuiper
+    hostname: ${KUIPER_HOSTNAME}
+    expose:
+      - ${KUIPER_PORT}
+    ports:
+      - ${KUIPER_PORT}:${KUIPER_PORT}
+    environment:
+      - KUIPER_ADDRESS=:${KUIPER_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+    networks:
+      - network
+    depends_on:
+      - nats
+
+  iam-service:
+    build:
+      context: ..
+      dockerfile: iam-service/Dockerfile
+    image: iam-service
+    container_name: iam-service
+    hostname: ${IAM_HOSTNAME}
+    expose:
+      - ${IAM_PORT}
+    ports:
+      - ${IAM_PORT}:${IAM_PORT}
+    environment:
+      - IAM_ADDRESS=:${IAM_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
+      - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
+      - NEO4J_DBNAME=${NEO4J_DBNAME}
+    networks:
+      - network
+    depends_on:
+      - nats
+      - neo4j
+      - vault
+
+  vault:
+    image: hashicorp/vault
+    container_name: vault
+    hostname: ${VAULT_HOSTNAME}
+    restart: on-failure
+    expose:
+      - ${VAULT_HTTP_PORT}
+    ports:
+      - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
+    volumes:
+        - ../iam-service/vault/config:/vault/config
+        - ../iam-service/vault/data:/vault/data
+    environment:
+      - VAULT_ADDR=http://0.0.0.0:8200
+      - VAULT_API_ADDR=http://0.0.0.0:8200
+      - VAULT_ADDRESS=http://0.0.0.0:8200
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID}
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    networks:
+      - network
+
+  neo4j:
+    image: neo4j:4.4.12
+    container_name: neo4j
+    hostname: ${NEO4J_HOSTNAME}
+    restart: on-failure
+    expose:
+      - ${NEO4J_HTTP_PORT}
+      - ${NEO4J_BOLT_PORT}
+    ports:
+      - ${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}
+      - ${NEO4J_BOLT_PORT}:${NEO4J_BOLT_PORT}
+    environment:
+      - NEO4J_apoc_export_file_enabled=${NEO4J_apoc_export_file_enabled}
+      - NEO4J_apoc_import_file_enabled=${NEO4J_apoc_import_file_enabled}
+      - NEO4J_apoc_import_file_use__neo4j__config=${NEO4J_apoc_import_file_use__neo4j__config}
+      - NEO4JLABS_PLUGINS=${NEO4J_PLUGINS}
+      - NEO4J_dbms_connector_bolt_listen__address=:${NEO4J_BOLT_PORT}
+      - NEO4J_dbms_connector_http_listen__address=:${NEO4J_HTTP_PORT}
+      - NEO4J_dbms_security_auth__enabled=${NEO4J_AUTH_ENABLED}
+    networks:
+      - network
+    volumes:
+      - neo4jdata:/data
+      - neo4jlogs:/logs
+
+  nats:
+    image: nats:latest
+    container_name: nats
+    expose:
+      - ${NATS_PORT}
+    ports:
+      - ${NATS_PORT}:${NATS_PORT}
+    hostname: ${NATS_HOSTNAME}
+    restart: on-failure
+    networks:
+      - network
+
+  etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: etcd
+    hostname: ${ETCD_HOSTNAME}
+    expose:
+      - ${ETCD_PORT}
+    ports:
+      - ${ETCD_PORT}:${ETCD_PORT}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${ETCD_HOSTNAME}:${ETCD_PORT}
+    volumes:
+      - etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  neo4jdata:
+    driver: local
+  neo4jlogs:
+    driver: local
+  etcd_data:
+    driver: local

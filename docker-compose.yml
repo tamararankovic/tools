@@ -65,8 +65,30 @@ services:
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - STAR_HTTP_ADDRESS=${STAR_HOSTNAME}:${STAR_HTTP_PORT}
+      - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
     networks:
       - network
+    depends_on:
+      - nats
+      - agent_queue
+
+  agent_queue:
+    build:
+      context: ../gravity
+      dockerfile: Dockerfile
+      args:
+        - GRPC_PORT=${AGENT_QUEUE_PORT}
+    image: agent_queue
+    container_name: agent_queue
+    restart: always
+    networks:
+      - network
+    ports:
+      - ${AGENT_QUEUE_PORT}:${AGENT_QUEUE_PORT}
+    environment:
+      GRPC_PORT: ${AGENT_QUEUE_PORT}
+      NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
     depends_on:
       - nats
 
@@ -77,6 +99,7 @@ services:
     image: iam-service
     container_name: iam-service
     hostname: ${IAM_HOSTNAME}
+    restart: on-failure
     expose:
       - ${IAM_PORT}
     ports:
@@ -92,12 +115,17 @@ services:
     networks:
       - network
     depends_on:
-      - nats
-      - neo4j
-      - vault
+      nats:
+        condition: service_started
+      vault:
+        condition: service_started
+      cassandra:
+        condition: service_healthy
 
   vault:
-    image: hashicorp/vault
+    build:
+      context: ..
+      dockerfile: tools/vault/Dockerfile
     container_name: vault
     hostname: ${VAULT_HOSTNAME}
     restart: on-failure
@@ -105,17 +133,17 @@ services:
       - ${VAULT_HTTP_PORT}
     ports:
       - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
-    volumes:
-        - ../iam-service/vault/config:/vault/config
-        - ../iam-service/vault/data:/vault/data
     environment:
-      - VAULT_ADDR=http://0.0.0.0:8200
-      - VAULT_API_ADDR=http://0.0.0.0:8200
-      - VAULT_ADDRESS=http://0.0.0.0:8200
-      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID}
+      - VAULT_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
+      - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
     cap_add:
       - IPC_LOCK
-    command: vault server -config=/vault/config/vault.json
+    command: vault server -config=/vault/config/vault.json 
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
     networks:
       - network
 
@@ -151,6 +179,9 @@ services:
       - ${NATS_PORT}
     ports:
       - ${NATS_PORT}:${NATS_PORT}
+      - 8222:8222
+    volumes:
+      - ./nats.conf:/etc/nats/nats-server.conf
     hostname: ${NATS_HOSTNAME}
     restart: on-failure
     networks:
@@ -172,6 +203,23 @@ services:
     networks:
       - network
 
+  cassandra:
+    build:
+      context: ..
+      dockerfile: tools/cassandra/Dockerfile
+    container_name: cassandra
+    restart: always
+    hostname: ${CASSANDRA_HOSTNAME}
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - network
+
 networks:
   network:
     driver: bridge
@@ -182,4 +230,8 @@ volumes:
   neo4jlogs:
     driver: local
   etcd_data:
+    driver: local
+  cassandra_data:
+    driver: local
+  vault_data:
     driver: local

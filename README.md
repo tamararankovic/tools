@@ -12,7 +12,7 @@ To start both control plane and node agents:
     
     `export $(grep -v '^#' .env | gxargs -d '\n')`
     
-    in *start.sh* (line 2)
+    in *start.sh* and *stop.sh* (line 2)
 
 *  `./start.sh`
 

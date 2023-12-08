@@ -1,6 +1,6 @@
 # export configurable env vars
-export $(grep -v '^#' .env | xargs -d '\n')
-# export $(grep -v '^#' .env | gxargs -d '\n')
+#export $(grep -v '^#' .env | xargs -d '\n')
+export $(grep -v '^#' .env | gxargs -d '\n')
 
 # export other env vars
 export STAR_HOSTNAME=star
@@ -40,8 +40,8 @@ export DB_NAME=postgres
 export DB_HOST=database
 
 # # build contol plane's services
-# docker-compose build --no-cache
-docker-compose build
+docker-compose build --no-cache
+#docker-compose build
 # # start the control plane
 docker-compose up -d
 
@@ -88,7 +88,6 @@ for ((i=1; i<=$NODES_NUM; i++)); do
     --env MAX_REGISTRATION_RETRIES=${MAX_REGISTRATION_RETRIES} \
     --env NODE_ID_DIR_PATH=${NODE_ID_DIR_PATH} \
     --env NODE_ID_FILE_NAME=${NODE_ID_FILE_NAME} \
-     --network=tools_network \
     -p $(($STAR_PORT + $i - 1)):${STAR_PORT} \
     --hostname "$STAR_HOSTNAME" \
     star:latest

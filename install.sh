@@ -17,5 +17,5 @@ cd ./kuiper
 git checkout develop
 git pull
 
-cd ../iam-service
-mv  -v ./iam-service/* ./
+#cd ../iam-service
+#mv  -v ./iam-service/* ./

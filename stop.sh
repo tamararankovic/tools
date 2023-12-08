@@ -1,5 +1,6 @@
 # export configurable env vars
-export $(grep -v '^#' .env | xargs -d '\n')
+# export $(grep -v '^#' .env | xargs -d '\n')
+export $(grep -v '^#' .env | gxargs -d '\n')
 
 # export other env vars
 export STAR_HOSTNAME=star

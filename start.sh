@@ -1,5 +1,5 @@
 # export configurable env vars
-#export $(grep -v '^#' .env | xargs -d '\n')
+# export $(grep -v '^#' .env | xargs -d '\n')
 export $(grep -v '^#' .env | gxargs -d '\n')
 
 # export other env vars
@@ -90,5 +90,6 @@ for ((i=1; i<=$NODES_NUM; i++)); do
     --env NODE_ID_FILE_NAME=${NODE_ID_FILE_NAME} \
     -p $(($STAR_PORT + $i - 1)):${STAR_PORT} \
     --hostname "$STAR_HOSTNAME" \
+    --network=tools_network \
     star:latest
 done

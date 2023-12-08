@@ -95,7 +95,7 @@ services:
   iam-service:
     build:
       context: ..
-      dockerfile: iam-service/Dockerfile
+      dockerfile: iam-service/iam-service/Dockerfile
     image: iam-service
     container_name: iam-service
     hostname: ${IAM_HOSTNAME}

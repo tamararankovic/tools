@@ -4,15 +4,7 @@ To download the source code of all services, run:
 
 To start both control plane and node agents:
 
-* [optional] If you're using MacOS, replace 
-    
-    `export $(grep -v '^#' .env | xargs -d '\n')`
-    
-    with
-    
-    `export $(grep -v '^#' .env | gxargs -d '\n')`
-    
-    in *start.sh* and *stop.sh* (line 2)
+* Install gxargs if runing on MacOS: `brew install findutils`
 
 *  `./start.sh`
 

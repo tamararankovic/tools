@@ -1,6 +1,12 @@
 # export configurable env vars
-# export $(grep -v '^#' .env | xargs -d '\n')
-export $(grep -v '^#' .env | gxargs -d '\n')
+OS_NAME="$(uname -s)"
+if [ "$OS_NAME" = "Darwin" ]; then
+    echo "Running on MacOS, trying to use xargs"
+    export $(grep -v '^#' .env | gxargs -d '\n')
+else
+    echo "Running on linux, using xargs"
+    export $(grep -v '^#' .env | xargs -d '\n')
+fi
 
 # export other env vars
 export STAR_HOSTNAME=star

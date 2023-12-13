@@ -45,6 +45,8 @@ export DB_USERNAME=postgres
 export DB_NAME=postgres
 export DB_HOST=database
 
+export SECRET_KEY="secret-key"
+
 # # build contol plane's services
 docker-compose build --no-cache
 #docker-compose build

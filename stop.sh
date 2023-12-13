@@ -1,6 +1,12 @@
 # export configurable env vars
-# export $(grep -v '^#' .env | xargs -d '\n')
-export $(grep -v '^#' .env | gxargs -d '\n')
+OS_NAME="$(uname -s)"
+if [ "$OS_NAME" = "Darwin" ]; then
+    echo "Running on MacOS, trying to use xargs"
+    export $(grep -v '^#' .env | gxargs -d '\n')
+else
+    echo "Running on linux, using xargs"
+    export $(grep -v '^#' .env | xargs -d '\n')
+fi
 
 # export other env vars
 export STAR_HOSTNAME=star
@@ -39,6 +45,8 @@ export DB_PASSWORD=c12s_password
 export DB_USERNAME=postgres
 export DB_NAME=postgres
 export DB_HOST=database
+
+export SECRET_KEY="secret-key"
 
 # stop node agents
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest --format="{{.ID}}"))

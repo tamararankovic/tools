@@ -19,6 +19,8 @@ services:
       - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
       - MAGNETAR_ADDRESS=:${MAGNETAR_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
+      - SECRET_KEY=${SECRET_KEY}
     networks:
       - network
     depends_on:
@@ -67,6 +69,8 @@ services:
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - STAR_HTTP_ADDRESS=${STAR_HOSTNAME}:${STAR_HTTP_PORT}
       - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
+      - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
+      - SECRET_KEY=${SECRET_KEY}
     networks:
       - network
     depends_on:
@@ -108,10 +112,12 @@ services:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
-      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - NATS_HOSTNAME=${NATS_HOSTNAME}
+      - NATS_PORT=${NATS_PORT}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
       - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
       - NEO4J_DBNAME=${NEO4J_DBNAME}
+      - SECRET_KEY=${SECRET_KEY}
     networks:
       - network
     depends_on:

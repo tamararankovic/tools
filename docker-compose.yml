@@ -225,6 +225,23 @@ services:
       retries: 10
     networks:
       - network
+  
+  lunar-gateway:
+    image: lunar-gateway
+    container_name: lunar-gateway
+    build:
+      context: ..
+      dockerfile: ./lunar-gateway/Dockerfile
+    restart: on-failure
+    ports:
+      - 5555:5555
+    networks:
+      - network
+    depends_on:
+      - magnetar
+      - oort
+      - iam-service
+      - kuiper
 
 networks:
   network:

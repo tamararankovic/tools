@@ -2,6 +2,23 @@ version: "3.8"
 
 services:
 
+  lunar-gateway:
+    image: lunar-gateway
+    container_name: lunar-gateway
+    build:
+      context: ../lunar-gateway
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - 5555:5555
+    networks:
+      - network
+    depends_on:
+      - magnetar
+      - oort
+      - iam-service
+      - kuiper
+
   magnetar:
     build:
       context: ..

@@ -49,11 +49,12 @@ export SECRET_KEY="secret-key"
 
 
 # # build contol plane's services
-#docker-compose build --no-cache
-docker-compose build --no-cache
-#docker-compose build
+
+#docker compose build --no-cache
+docker compose build
+
 # # start the control plane
-docker-compose up -d
+docker compose up -d
 
 # cassandra init
 CONTAINER_NAME="cassandra"

@@ -33,8 +33,8 @@ export NEO4J_PLUGINS="[\"apoc\"]"
 
 export VAULT_HTTP_PORT=8200
 export VAULT_HOSTNAME=vault
-export VAULT_DEV_ROOT_TOKEN_ID=hvs.QNCAfGkTP9ADGKceBd4da07k
 export VAULT_ADDR=http://0.0.0.0
+export VAULT_KEYS_FILE=/etc/iam-service/api_key.json
 
 export CASSANDRA_DB=apollo
 export CASSANDRA_HOSTNAME=cassandra

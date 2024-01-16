@@ -125,16 +125,18 @@ services:
       - ${IAM_PORT}
     ports:
       - ${IAM_PORT}:${IAM_PORT}
+    volumes:
+      - ./../iam-service/iam-service/vault/config/api_key.json:/etc/iam-service/api_key.json
     environment:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
       - NATS_HOSTNAME=${NATS_HOSTNAME}
       - NATS_PORT=${NATS_PORT}
-      - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
-      - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
-      - NEO4J_DBNAME=${NEO4J_DBNAME}
       - SECRET_KEY=${SECRET_KEY}
+      - VAULT_HOSTNAME=${VAULT_HOSTNAME}
+      - VAULT_HTTP_PORT=${VAULT_HTTP_PORT}
+      - VAULT_KEYS_FILE=${VAULT_KEYS_FILE}
     networks:
       - network
     depends_on:

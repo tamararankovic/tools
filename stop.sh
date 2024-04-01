@@ -9,6 +9,17 @@ else
 fi
 
 # export other env vars
+export MAGNETAR_PORT=5000
+export KUIPER_PORT=9001
+export OORT_PORT=8000
+export IAM_PORT=8002
+export AGENT_QUEUE_PORT=50052
+export NATS_PORT=4222
+export ETCD_PORT=2379
+export NEO4J_BOLT_PORT=7687
+export NEO4J_HTTP_PORT=7474
+export VAULT_HTTP_PORT=8200
+
 export STAR_HOSTNAME=star
 export MAGNETAR_HOSTNAME=magnetar
 export KUIPER_HOSTNAME=kuiper
@@ -19,6 +30,7 @@ export IAM_HOSTNAME=iam-service
 export BLACKHOLE_HOSTNAME=queue
 export AGENT_QUEUE_HOSTNAME=agent_queue
 
+export REGISTRATION_TIMEOUT=1000
 export REGISTRATION_SUBJECT="register"
 export NODE_ID_DIR_PATH="/etc/c12s"
 export NODE_ID_FILE_NAME="nodeid"

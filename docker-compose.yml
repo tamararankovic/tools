@@ -2,23 +2,6 @@ version: "3.8"
 
 services:
 
-  lunar-gateway:
-    image: lunar-gateway
-    container_name: lunar-gateway
-    build:
-      context: ../lunar-gateway
-      dockerfile: Dockerfile
-    restart: on-failure
-    ports:
-      - 5555:5555
-    networks:
-      - network
-    depends_on:
-      - magnetar
-      - oort
-      - iam-service
-      - kuiper
-
   magnetar:
     build:
       context: ..
@@ -27,10 +10,10 @@ services:
     container_name: magnetar
     hostname: ${MAGNETAR_HOSTNAME}
     restart: on-failure
-    expose:
-      - ${MAGNETAR_PORT}
-    ports:
-      - ${MAGNETAR_PORT}:${MAGNETAR_PORT}
+    # expose:
+    #   - ${MAGNETAR_PORT}
+    # ports:
+    #   - ${MAGNETAR_PORT}:${MAGNETAR_PORT}
     environment:
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
@@ -51,10 +34,10 @@ services:
     image: oort
     container_name: oort
     hostname: ${OORT_HOSTNAME}
-    expose:
-      - ${OORT_PORT}
-    ports:
-      - ${OORT_PORT}:${OORT_PORT}
+    # expose:
+    #   - ${OORT_PORT}
+    # ports:
+    #   - ${OORT_PORT}:${OORT_PORT}
     environment:
       - OORT_PORT=${OORT_PORT}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
@@ -75,16 +58,15 @@ services:
     image: kuiper
     container_name: kuiper
     hostname: ${KUIPER_HOSTNAME}
-    expose:
-      - ${KUIPER_PORT}
-    ports:
-      - ${KUIPER_PORT}:${KUIPER_PORT}
+    # expose:
+    #   - ${KUIPER_PORT}
+    # ports:
+    #   - ${KUIPER_PORT}:${KUIPER_PORT}
     environment:
       - KUIPER_ADDRESS=:${KUIPER_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
-      - STAR_HTTP_ADDRESS=${STAR_HOSTNAME}:${STAR_HTTP_PORT}
       - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
       - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
       - SECRET_KEY=${SECRET_KEY}
@@ -105,8 +87,8 @@ services:
     restart: always
     networks:
       - network
-    ports:
-      - ${AGENT_QUEUE_PORT}:${AGENT_QUEUE_PORT}
+    # ports:
+    #   - ${AGENT_QUEUE_PORT}:${AGENT_QUEUE_PORT}
     environment:
       GRPC_PORT: ${AGENT_QUEUE_PORT}
       NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
@@ -121,10 +103,10 @@ services:
     container_name: iam-service
     hostname: ${IAM_HOSTNAME}
     restart: on-failure
-    expose:
-      - ${IAM_PORT}
-    ports:
-      - ${IAM_PORT}:${IAM_PORT}
+    # expose:
+    #   - ${IAM_PORT}
+    # ports:
+    #   - ${IAM_PORT}:${IAM_PORT}
     volumes:
       - ./../iam-service/iam-service/vault/config/api_key.json:/etc/iam-service/api_key.json
     environment:
@@ -154,10 +136,10 @@ services:
     container_name: vault
     hostname: ${VAULT_HOSTNAME}
     restart: on-failure
-    expose:
-      - ${VAULT_HTTP_PORT}
-    ports:
-      - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
+    # expose:
+    #   - ${VAULT_HTTP_PORT}
+    # ports:
+    #   - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
     environment:
       - VAULT_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
       - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
@@ -177,12 +159,12 @@ services:
     container_name: neo4j
     hostname: ${NEO4J_HOSTNAME}
     restart: on-failure
-    expose:
-      - ${NEO4J_HTTP_PORT}
-      - ${NEO4J_BOLT_PORT}
-    ports:
-      - ${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}
-      - ${NEO4J_BOLT_PORT}:${NEO4J_BOLT_PORT}
+    # expose:
+    #   - ${NEO4J_HTTP_PORT}
+    #   - ${NEO4J_BOLT_PORT}
+    # ports:
+    #   - ${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}
+    #   - ${NEO4J_BOLT_PORT}:${NEO4J_BOLT_PORT}
     environment:
       - NEO4J_apoc_export_file_enabled=${NEO4J_apoc_export_file_enabled}
       - NEO4J_apoc_import_file_enabled=${NEO4J_apoc_import_file_enabled}
@@ -200,11 +182,11 @@ services:
   nats:
     image: nats:latest
     container_name: nats
-    expose:
-      - ${NATS_PORT}
-    ports:
-      - ${NATS_PORT}:${NATS_PORT}
-      - 8222:8222
+    # expose:
+    #   - ${NATS_PORT}
+    # ports:
+    #   - ${NATS_PORT}:${NATS_PORT}
+    #   - 8222:8222
     volumes:
       - ./nats.conf:/etc/nats/nats-server.conf
     hostname: ${NATS_HOSTNAME}
@@ -216,10 +198,10 @@ services:
     image: 'bitnami/etcd:latest'
     container_name: etcd
     hostname: ${ETCD_HOSTNAME}
-    expose:
-      - ${ETCD_PORT}
-    ports:
-      - ${ETCD_PORT}:${ETCD_PORT}
+    # expose:
+    #   - ${ETCD_PORT}
+    # ports:
+    #   - ${ETCD_PORT}:${ETCD_PORT}
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - ETCD_ADVERTISE_CLIENT_URLS=http://${ETCD_HOSTNAME}:${ETCD_PORT}

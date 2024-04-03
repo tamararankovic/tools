@@ -1,0 +1,488 @@
+{
+	"info": {
+		"_postman_id": "efe189d8-77a2-4a98-a09e-67b6c2c591b9",
+		"name": "WP6.3 - Reconfiguration management demo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11907613"
+	},
+	"item": [
+		{
+			"name": "List node pool",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5555/apis/core/v1/nodes/available",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"nodes",
+						"available"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"pera@gmail.com\",\n    \"name\": \"pera\",\n    \"org\": \"org\",\n    \"password\": \"pera\",\n    \"surname\": \"peric\",\n    \"username\": \"pera\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/user",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login User",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.environment.set(\"token\", \"Bearer:\" + jsonData.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"password\": \"pera\",\n    \"username\": \"pera\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/auth",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Claim Nodes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"console.log(\"Node Id \" + jsonData.node[0].id)",
+							"pm.environment.set(\"nodeid\", jsonData.node[0].id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"org\": \"org\",\n    \"query\": [\n        {\n            \"labelKey\": \"memory-totalGB\",\n            \"shouldBe\": \">\",\n            \"value\": \"2\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/nodes",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"nodes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Put New Label",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"label\": {\n        \"key\": \"newlabel\",\n        \"value\": 25.0\n    },\n    \"nodeId\": \"{{nodeid}}\",\n    \"org\": \"org\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/labels/float64",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"labels",
+						"float64"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Query nodes in org",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"org\": \"org\",\n    \"query\": [\n        {\n            \"labelKey\": \"newlabel\",\n            \"shouldBe\": \">\",\n            \"value\": \"20.0\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/nodes/allocated/query_match",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"nodes",
+						"allocated",
+						"query_match"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "There is namespace dev",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"from\": {\n        \"id\": \"dev\",\n        \"kind\": \"namespace\"\n    },\n    \"to\": {\n        \"id\": \"my-app\",\n        \"kind\": \"app\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/relations",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"relations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "There is an app in namespace dev",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"from\": {\n        \"id\": \"org\",\n        \"kind\": \"org\"\n    },\n    \"to\": {\n        \"id\": \"dev\",\n        \"kind\": \"namespace\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/relations",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"relations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "The app can read config from namespace dev",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"objectScope\": {\n        \"id\": \"dev\",\n        \"kind\": \"namespace\"\n    },\n    \"permission\": {\n        \"condition\": {\n            \"expression\": \"\"\n        },\n        \"kind\": \"ALLOW\",\n        \"name\": \"config.get\"\n    },\n    \"subjectScope\": {\n        \"id\": \"my-app\",\n        \"kind\": \"app\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/policies",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"policies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User puts new config in org",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"group\": {\n        \"configs\": [\n            {\n                \"value\": \"1234\",\n                \"key\": \"port\"\n            }\n        ],\n        \"name\": \"dbconfig\",\n        \"orgId\": \"org\",\n        \"version\": 1\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/configs",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"configs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User puts new config in org v2",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"group\": {\n        \"configs\": [\n            {\n                \"value\": \"1111\",\n                \"key\": \"port\"\n            }\n        ],\n        \"name\": \"dbconfig\",\n        \"orgId\": \"org\",\n        \"version\": 2\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/configs",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"configs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User applies config v1 to namespace",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"groupName\": \"dbconfig\",\n    \"namespace\": \"dev\",\n    \"orgId\": \"org\",\n    \"query\": [\n        {\n            \"shouldBe\": \">\",\n            \"labelKey\": \"newlabel\",\n            \"value\": \"20.0\"\n        }\n    ],\n    \"version\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5555/apis/core/v1/configs/applications",
+					"host": [
+						"localhost"
+					],
+					"port": "5555",
+					"path": [
+						"apis",
+						"core",
+						"v1",
+						"configs",
+						"applications"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "nodeid",
+			"value": ""
+		}
+	]
+}

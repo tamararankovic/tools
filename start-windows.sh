@@ -31,7 +31,7 @@ export AGENT_QUEUE_HOSTNAME=agent_queue
 
 export REGISTRATION_TIMEOUT=1000
 export REGISTRATION_SUBJECT="register"
-export NODE_ID_DIR_PATH="/etc/c12s"
+export NODE_ID_DIR_PATH="//etc/c12s"
 export NODE_ID_FILE_NAME="nodeid"
 
 export NEO4J_HOSTNAME=neo4j
@@ -44,7 +44,7 @@ export NEO4J_PLUGINS="[\"apoc\"]"
 
 export VAULT_HOSTNAME=vault
 export VAULT_ADDR=http://0.0.0.0
-export VAULT_KEYS_FILE=/etc/iam-service/api_key.json
+export VAULT_KEYS_FILE=//etc/iam-service/api_key.json
 
 export CASSANDRA_DB=apollo
 export CASSANDRA_HOSTNAME=cassandra
@@ -73,7 +73,7 @@ while true; do
     # Check if the container is healthy
     if [ "$HEALTH" = "healthy" ]; then
         echo "Container is healthy, running additional script"
-        docker exec -it cassandra /bin/sh -c "cqlsh -f /schema.cql"
+        winpty docker exec -it cassandra //bin/sh -c "cqlsh -f /schema.cql"
         break  # Exit the loop when the container is healthy
     else
         echo "Cassandra is not healthy, waiting for 5 seconds before checking again"
@@ -85,10 +85,6 @@ done
 export STAR_HOSTNAME=star
 export OORT_HOSTNAME=oort
 export NATS_HOSTNAME=nats
-
-export REGISTRATION_SUBJECT="register"
-export NODE_ID_DIR_PATH="/etc/c12s"
-export NODE_ID_FILE_NAME="nodeid"
 
 # build the node agent
 docker build -f ../star/Dockerfile .. -t star

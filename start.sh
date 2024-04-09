@@ -59,6 +59,11 @@ export DB_USERNAME=postgres
 export DB_NAME=postgres
 export DB_HOST=database
 
+export QUASAR_HOSTNAME=quasar
+export QUASAR_PORT=9090
+export QUASAR_ETCD_HOSTNAME=quasar_etcd
+export QUASAR_ETCD_PORT=2379
+
 export SECRET_KEY="secret-key"
 
 # build contol plane's services

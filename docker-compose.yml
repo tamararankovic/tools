@@ -58,23 +58,45 @@ services:
     image: kuiper
     container_name: kuiper
     hostname: ${KUIPER_HOSTNAME}
-    # expose:
-    #   - ${KUIPER_PORT}
-    # ports:
-    #   - ${KUIPER_PORT}:${KUIPER_PORT}
+    expose:
+      - ${KUIPER_PORT}
+    ports:
+      - ${KUIPER_PORT}:${KUIPER_PORT}
     environment:
       - KUIPER_ADDRESS=:${KUIPER_PORT}
+      - WEBHOOK_ADDRESS=:${KUIPER_WEBHOOK_PORT}
+      - WEBHOOK_URL=http://${KUIPER_HOSTNAME}:${KUIPER_WEBHOOK_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - QUASAR_ADDRESS=${QUASAR_HOSTNAME}:${QUASAR_PORT}
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
-      - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
+      - ETCD_ADDRESS=${KUIPER_ETCD_HOSTNAME}:${KUIPER_ETCD_PORT}
       - SECRET_KEY=${SECRET_KEY}
     networks:
       - network
     depends_on:
       - nats
+      - kuiper_etcd
       - agent_queue
+
+  quasar:
+    build:
+      context: ..
+      dockerfile: quasar/Dockerfile
+    image: quasar
+    container_name: quasar
+    hostname: ${QUASAR_HOSTNAME}
+    environment:
+      - SERVER_PORT=${QUASAR_PORT}
+      - ETCD_ADDRESS=${QUASAR_ETCD_HOSTNAME}:${QUASAR_ETCD_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - SECRET_KEY=${SECRET_KEY}
+    networks:
+      - network
+    depends_on:
+      - quasar_etcd
+      - nats
 
   agent_queue:
     build:
@@ -198,15 +220,35 @@ services:
     image: 'bitnami/etcd:latest'
     container_name: etcd
     hostname: ${ETCD_HOSTNAME}
-    # expose:
-    #   - ${ETCD_PORT}
-    # ports:
-    #   - ${ETCD_PORT}:${ETCD_PORT}
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - ETCD_ADVERTISE_CLIENT_URLS=http://${ETCD_HOSTNAME}:${ETCD_PORT}
     volumes:
       - etcd_data:/bitnami/etcd
+    networks:
+      - network
+    
+  kuiper_etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: kuiper_etcd
+    hostname: ${KUIPER_ETCD_HOSTNAME}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${KUIPER_ETCD_HOSTNAME}:${KUIPER_ETCD_PORT}
+    volumes:
+      - kuiper_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  quasar_etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: quasar_etcd
+    hostname: ${QUASAR_ETCD_HOSTNAME}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${QUASAR_ETCD_HOSTNAME}:${QUASAR_ETCD_PORT}
+    volumes:
+      - quasar_etcd_data:/bitnami/etcd
     networks:
       - network
 
@@ -243,6 +285,7 @@ services:
       - oort
       - iam-service
       - kuiper
+      - quasar
 
 networks:
   network:
@@ -254,6 +297,10 @@ volumes:
   neo4jlogs:
     driver: local
   etcd_data:
+    driver: local
+  kuiper_etcd_data:
+    driver: local
+  quasar_etcd_data:
     driver: local
   cassandra_data:
     driver: local

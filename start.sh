@@ -11,11 +11,13 @@ fi
 # export other env vars
 export MAGNETAR_PORT=5000
 export KUIPER_PORT=9001
+export KUIPER_WEBHOOK_PORT=9002
 export OORT_PORT=8000
 export IAM_PORT=8002
 export AGENT_QUEUE_PORT=50052
 export NATS_PORT=4222
 export ETCD_PORT=2379
+export KUIPER_ETCD_PORT=2379
 export NEO4J_BOLT_PORT=7687
 export NEO4J_HTTP_PORT=7474
 export VAULT_HTTP_PORT=8200
@@ -26,6 +28,7 @@ export KUIPER_HOSTNAME=kuiper
 export OORT_HOSTNAME=oort
 export NATS_HOSTNAME=nats
 export ETCD_HOSTNAME=etcd
+export KUIPER_ETCD_HOSTNAME=kuiper_etcd
 export IAM_HOSTNAME=iam-service
 export AGENT_QUEUE_HOSTNAME=agent_queue
 
@@ -55,6 +58,11 @@ export DB_PASSWORD=c12s_password
 export DB_USERNAME=postgres
 export DB_NAME=postgres
 export DB_HOST=database
+
+export QUASAR_HOSTNAME=quasar
+export QUASAR_PORT=9090
+export QUASAR_ETCD_HOSTNAME=quasar_etcd
+export QUASAR_ETCD_PORT=2379
 
 export SECRET_KEY="secret-key"
 

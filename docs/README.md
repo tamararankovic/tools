@@ -11,7 +11,9 @@ A system for dynamic node reconfiguration. The core features include:
 - Organization management
 -  Access control
 -   Support for namespaces
--  Configuration storing and versioning
+-  Configuration management and versioning
+- Schema management and versioning
+- Schema-based configuration validation
 -  Configuration dissemination
 
 ## Getting Started
@@ -82,7 +84,7 @@ The node agents are available on ports specified in the configuration file. The 
 
 ## Endpoints
 
-### POST /apis/core/v1/user
+### POST /apis/core/v1/users
 
 The endpoint for registering new users.
 
@@ -326,6 +328,10 @@ None
 | `nodes.labels.key` | string  | Label key. |
 | `nodes.labels.value` | string  | Label's stringified value. |
 
+#### Response - 400 Bad Request
+
+ - Invalid query format
+
 ### GET /apis/core/v1/nodes/allocated/query_match
 
 The endpoint for querying nodes owned by an organization.
@@ -393,6 +399,10 @@ The endpoint for querying nodes owned by an organization.
 
  - The user is not a member of the specified organization
 
+ #### Response - 400 Bad Request
+
+ - Invalid query format
+
 ### PATCH /apis/core/v1/nodes
 
 The endpoint for allocating nodes. The available nodes matched by the query selector will become ownership of the specified organization.
@@ -459,6 +469,10 @@ The endpoint for allocating nodes. The available nodes matched by the query sele
 #### Response - 403 Forbidden
 
  - The user is not a member of the specified organization
+
+ #### Response - 400 Bad Request
+
+ - Invalid query format
 
 ### POST /apis/core/v1/labels/float64
 
@@ -528,6 +542,10 @@ The endpoint for upserting a label for the specified node. The label has a float
  - The user is not a member of the specified organization
  - The node is not owned by the specified organization
 
+ #### Response - 404 Not Found
+
+ - Node doesn't exist
+
 ### POST /apis/core/v1/labels/bool
 
 The endpoint for upserting a label for the specified node. The label has a boolean value. The node must be owned by the specified organization.
@@ -595,6 +613,10 @@ The endpoint for upserting a label for the specified node. The label has a boole
 
  - The user is not a member of the specified organization
  - The node is not owned by the specified organization
+
+  #### Response - 404 Not Found
+
+ - Node doesn't exist
 
 ### POST /apis/core/v1/labels/string
 
@@ -664,6 +686,10 @@ The endpoint for upserting a label for the specified node. The label has a strin
  - The user is not a member of the specified organization
  - The node is not owned by the specified organization
 
+  #### Response - 404 Not Found
+
+ - Node doesn't exist
+
 ### DELETE /apis/core/v1/labels
 
 The endpoint for deleting a label for the specified node. The node must be owned by the specified organization.
@@ -722,6 +748,10 @@ The endpoint for deleting a label for the specified node. The node must be owned
 
  - The user is not a member of the specified organization
  - The node is not owned by the specified organization
+
+  #### Response - 404 Not Found
+
+ - Node doesn't exist
 
 ### POST /apis/core/v1/relations
 
@@ -816,9 +846,9 @@ The endpoint for creating security policies.
 
  - The user has no permission to manage specified resources.
 
-### POST /apis/core/v1/configs
+ ### POST /apis/core/v1/schemas
 
-The endpoint for creating new configuration version.
+ The endpoint for creating new configuration schema version.
 
 #### Request headers
 
@@ -828,55 +858,360 @@ The endpoint for creating new configuration version.
 
 ```json
 {
-	"group": {
-		"configs": [
-			{
-				"value": "1234",
-				"key": "port"
-			}
-		],
-		"name": "dbconfig",
-		"orgId": "org",
-		"version": 1
-	}
+	"schema_details": {
+		"organization": "c12s",
+		"schema_name": "schema",
+		"version": "v1.0.2"
+	},
+	"schema": "properties:\n  db_config:\n    properties:\n      address:\n        type: string\n      port:\n        type: integer\n    required:\n    - address\n    - port\n    type: object\nrequired:\n- db_config\ntype: object\n"
 }
 ```
-|property| type  |                    description                      |
+| property | type | description |
 |-----|-----|----|
-| `group`    | object  | Configuration. |
-| `group.configs`    | array of object  | Configuration parameters. |
-| `group.configs.key`    | string | Key of the configuration parameter. |
-| `group.configs.value`    | string  | Value of the configuration parameter. |
-| `group.name`    | string  | Configuration name. |
-| `group.orgId`    | string  | Name of the organization that is the owner of the configuration. |
-| `group.version`    | int  | Configuration version. If the configuration with the specified name didn't exist, the version must be set to 1. If it did, the version mustn't already exist and there should be a previous version.|
+| `schema_details`    | object  | Schema info. |
+| `schema_details.organization`    | string  | The owner of the schema. |
+| `schema_details.schema_name`    | string  | Schema name. |
+| `schema_details.version`    | string | Schema version. New schema version will be saved only if it doesn't already exist. |
+| `schema`    | string | Schema definition. Must be a valid YAML representation of a JSON schema. |
 
 #### Response - 200 OK
 
 ```json
 {
-	"group": {
-		"configs": [
-			{
-				"value": "1234",
-				"key": "port"
-			}
-		],
-		"name": "dbconfig",
-		"orgId": "org",
-		"version": 1
+	"status": 0,
+	"message": "Schema saved successfully!"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `status`    | string  | Response status. |
+| `message`    | string  | Response message. The value depends on the response status:<br>0 - Schema saved successfully!<br>3 - Provided version is not latest! Please provide a version that succeeds 'v1.0.0'!<br> 3 - schema is invalid<br>3 - Schema details must not contain '/'!<br>3 - Schema version must be a valid SemVer string with 'v' prefix! |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ ### GET /apis/core/v1/schemas
+
+ The endpoint for getting a specified configuration schema version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+	"schema_details": {
+		"organization": "c12s",
+		"schema_name": "schema",
+		"version": "v1.0.2"
 	}
 }
 ```
-|property| type  |                    description                      |
+| property | type | description |
 |-----|-----|----|
-| `group`    | object  | Configuration. |
-| `group.configs`    | array of object  | Configuration parameters. |
-| `group.configs.key`    | string | Key of the configuration parameter. |
-| `group.configs.value`    | string  | Value of the configuration parameter. |
-| `group.name`    | string  | Configuration name. |
-| `group.orgId`    | string  | Name of the organization that is the owner of the configuration. |
-| `group.version`    | int  | Configuration version. |
+| `schema_details`    | object  | Schema info. |
+| `schema_details.organization`    | string  | The owner of the schema. |
+| `schema_details.schema_name`    | string  | Schema name. |
+| `schema_details.version`    | string | Schema version. New schema version will be saved only if it doesn't already exist. |
+
+#### Response - 200 OK
+
+```json
+{
+    "message": "Schema retrieved successfully!",
+    "schemaData": {
+        "schema": "properties:\n  db_config:\n    properties:\n      address:\n        type: string\n      port:\n        type: integer\n    required:\n    - address\n    - port\n    type: object\nrequired:\n- db_config\ntype: object\n",
+        "creationTime": "2024-04-10T10:49:29.496643237Z"
+    }
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `message`    | string  | Response message. |
+| `schemaData`    | object  | Schema details. |
+| `schemaData.schema`    | string  | Schema definition. |
+| `schemaData.creationTime`    | string  | Date and time when the schema was created. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ ### GET /apis/core/v1/schemas/versions
+
+ The endpoint for getting all versions of a specified configuration schema.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+	"schema_details": {
+		"organization": "c12s",
+		"schema_name": "schema",
+	}
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `schema_details`    | object  | Schema info. |
+| `schema_details.organization`    | string  | The owner of the schema. |
+| `schema_details.schema_name`    | string  | Schema name. |
+
+#### Response - 200 OK
+
+```json
+{
+    "message": "Schema versions retrieved successfully!",
+    "schemaVersions": [
+        {
+            "schemaDetails": {
+                "schemaName": "schema",
+                "version": "v1.0.1",
+                "organization": "c12s"
+            },
+            "schemaData": {
+                "schema": "properties:\n  db_config:\n    properties:\n      address:\n        type: string\n      port:\n        type: integer\n    required:\n    - address\n    - port\n    type: object\nrequired:\n- db_config\ntype: object\n",
+                "creationTime": "2024-04-10T10:49:29.496643237Z"
+            }
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `message`    | string  | Response message. |
+| `schemaVersions`    | array of objects  | List of schemas. |
+| `schemaVersions.schemaDetails`    | object  | Schema info. |
+| `schemaVersions.schemaDetails.organization`    | string  | The owner of the schema. |
+| `schemaVersions.schemaDetails.schema_name`    | string  | Schema name. |
+| `schemaVersions.schemaDetails.version`    | string | Schema version. |
+| `schemaVersions.schemaData`    | object  | Schema details. |
+| `schemaVersions.schemaData.schema`    | string  | Schema definition. |
+| `schemaVersions.schemaData.creationTime`    | string  | Date and time when the schema was created. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ ### DELETE /apis/core/v1/schemas
+
+ The endpoint for deleting a specified configuration schema version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+	"schema_details": {
+		"organization": "c12s",
+		"schema_name": "schema",
+		"version": "v1.0.2"
+	}
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `schema_details`    | object  | Schema info. |
+| `schema_details.organization`    | string  | The owner of the schema. |
+| `schema_details.schema_name`    | string  | Schema name. |
+| `schema_details.version`    | string | Schema version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "message": "Schema deleted successfully!"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `message`    | string  | Response message. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+### GET /apis/core/v1/schemas/validations
+
+ The endpoint for validating configuration against a specified configuration schema version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+  "schema_details": {
+    "organization": "c12s",
+    "schema_name": "schema",
+    "version": "v1.0.1"
+  },
+  "configuration": "db_config:\n	address: 127.0.0.1\n	port: abc"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `schema_details`    | object  | Schema info. |
+| `schema_details.organization`    | string  | The owner of the schema. |
+| `schema_details.schema_name`    | string  | Schema name. |
+| `schema_details.version`    | string | Schema version. |
+| `configuration`    | string  | Configuration in YAML format. |
+
+#### Response 1 - 200 OK
+
+```json
+{
+  "status": 0,
+  "message": "The configuration is valid!",
+  "is_valid": true
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `status`    | int  | Response status. |
+| `message`    | string  | Response message. |
+| `is_valid`    | bool  | Specifies whether the configuration was valid or not. |
+
+#### Response 2 - 200 OK
+
+```json
+{
+  "status": 0,
+  "message": "person.age: Invalid type. Expected: integer, given: string",
+  "is_valid": false
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `status`    | int  | Response status. |
+| `message`    | string  | Response message. |
+| `is_valid`    | bool  | Specifies whether the configuration was valid or not. |
+
+#### Response 3 - 200 OK
+
+```json
+{
+  "status": 3,
+  "message": "No schema with key 'my_namespace/car_schema/v1.0.0' found!",
+  "is_valid": false
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `status`    | int  | Response status. |
+| `message`    | string  | Response message. |
+| `is_valid`    | bool  | Specifies whether the configuration was valid or not. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+
+
+
+### POST /apis/core/v1/configs/standalone
+
+The endpoint for creating new standalone configuration version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+	"name": "nats_config",
+	"version": "v1.0.1",
+    "paramSet": [
+        {
+			"key": "port",
+            "value": "8884"
+        },
+		{
+            "key": "address",
+			"value": "127.0.0.1"
+        }
+    ],
+	"schema": {
+		"name": "nats_schema",
+		"version": "v2.1.0"
+	}
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `paramSet`    | array of objects | Configuration parameters. |
+| `paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSet.value`    | string  | Value of the configuration parameter. |
+| `schema` | object | **[optional]** Schema against which to validate the new configuration. |
+| `schema.name` | string | **[optional]** Schema name. |
+| `schema.version` | string | **[optional]** Schema version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+    "name": "nats_config",
+    "version": "v1.0.1",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSet": [
+        {
+            "key": "port",
+            "value": "8884"
+        },
+		{
+            "key": "address",
+			"value": "127.0.0.1"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSet`    | array of objects | Configuration parameters. |
+| `paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSet.value`    | string  | Value of the configuration parameter. |
 
 #### Response - 401 Unauthorized
 
@@ -888,11 +1223,11 @@ The endpoint for creating new configuration version.
 
 #### Response - 400 Bad request
 
- - Invalid configuration version
+ - Schema validation wasn't successful
 
-### POST /apis/core/v1/configs/applications
+### GET /apis/core/v1/configs/standalone/single
 
-The endpoint for applying a configuration version to the selected nodes. The configuration will be visible only in the specified namespace.
+The endpoint for getting a specified standalone configuration version.
 
 #### Request headers
 
@@ -902,31 +1237,325 @@ The endpoint for applying a configuration version to the selected nodes. The con
 
 ```json
 {
-	"groupName": "dbconfig",
-	"namespace": "dev",
-	"orgId": "org",
-	"query": [
-		{
-			"labelKey": "newlabel",
-			"shouldBe": ">",
-			"value": "20.0"
-		}
-	],
-	"version": 1
+    "organization": "c12s",
+	"name": "nats_config",
+	"version": "v1.0.1"
 }
 ```
-|property| type  |                    description                      |
+| property | type | description |
 |-----|-----|----|
-| `groupName`    | string  | Configuration name. |
-| `namespace`    | string  | Namespace in which the configuration will be visible. |
-| `orgId`    | string  | Name of the organization that is the owner of the configuration. |
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+    "name": "nats_config",
+    "version": "v1.0.1",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSet": [
+        {
+            "key": "port",
+            "value": "8884"
+        },
+		{
+            "key": "address",
+			"value": "127.0.0.1"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSet`    | array of objects | Configuration parameters. |
+| `paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+ - Configuration not found.
+
+ ### GET /apis/core/v1/configs/standalone
+
+The endpoint for listing all standalone configurations inside an organization.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+
+#### Response - 200 OK
+
+```json
+{
+	"configurations": [
+		{
+			"organization": "c12s",
+			"name": "nats_config",
+			"version": "v1.0.1",
+			"createdAt": "2024-04-10 08:44:12 +0000 UTC",
+			"paramSet": [
+				{
+					"key": "port",
+					"value": "8884"
+				},
+				{
+					"key": "address",
+					"value": "127.0.0.1"
+				}
+			]
+		}
+	]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `configurations`    | array of objects  | List of configurations. |
+| `configurations.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `configurations.name`    | string  | Configuration name. |
+| `configurations.version`    | string  | Configuration version. |
+| `configurations.createdAt` | string | Date and time when the configuration was created. |
+| `configurations.paramSet`    | array of objects | Configuration parameters. |
+| `configurations.paramSet.key`    | string | Key of the configuration parameter. |
+| `configurations.paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+### DELETE /apis/core/v1/configs/standalone
+
+The endpoint for deleting a specified standalone configuration version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+	"name": "nats_config",
+	"version": "v1.0.1"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+    "name": "nats_config",
+    "version": "v1.0.1",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSet": [
+        {
+            "key": "port",
+            "value": "8884"
+        },
+		{
+            "key": "address",
+			"value": "127.0.0.1"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSet`    | array of objects | Configuration parameters. |
+| `paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+ - Configuration not found.
+
+ ### GET /apis/core/v1/configs/standalone/diff
+
+The endpoint for getting a diff between two standalone configuration versions.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "reference": {
+        "name": "nats_config",
+        "organization": "c12s",
+        "version": "v1.0.0"
+    },
+    "diff": {
+        "name": "nats_config",
+        "organization": "c12s",
+        "version": "v1.0.1"
+    }
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `reference`    | object  | Reference configuration for calculating diff. |
+| `reference.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `reference.name`    | string  | Configuration name. |
+| `reference.version`    | string  | Configuration version. |
+| `diff`    | object  | Configuration whose diffs should be taken into account. |
+| `diff.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `diff.name`    | string  | Configuration name. |
+| `diff.version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "diffs": [
+        {
+            "type": "replacement",
+            "diff": {
+                "key": "port",
+                "new_value": "8884",
+                "old_value": "1111"
+            }
+        },
+        {
+            "type": "deletion",
+            "diff": {
+                "key": "address",
+                "value": "127.0.0.1"
+            }
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `diffs`    | array of objects  | List of diffs between two configurations. |
+| `diffs.type`    | string  | Diff type. Possible values are: *addition, deletion, replacement* |
+| `diffs.diff`    | map<string, string> | Diff info. Fields present depend on the diff type. <br>**addition**: key, value <br>**deletion**: key, value <br>**replacement**: key, old_value, new_value |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+- Configuration not found
+
+### POST /apis/core/v1/configs/standalone/placements
+
+The endpoint for disseminating a standalone configuration version to the query-selected nodes.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "config": {
+        "name": "app_config",
+        "organization": "c12s",
+        "version": "v1.0.0"
+    },
+    "namespace": "dev",
+    "query": [
+        {
+            "labelKey": "newlabel",
+            "shouldBe": ">",
+            "value": "20.0"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `config.organization`    | string  | Name of the organization that is the owner of the configuration as well as nodes for dissemination. |
+| `config.name`    | string  | Configuration name. |
+| `config.version`    | string  | Configuration version. |
+| `namespace`    | string | Namespace in which the configuration will be visible. |
 | `query` | array of objects | A label-based query selector. For a node to match a query, all selectors must be true. |
 | `query.labelKey` | string | Key of the label to compare. |
 | `query.shouldBe` | string | The omparison operator. Supported operators are: =, !=, <, >. |
 | `query.value` | string | Value that should be compared to the label value. |
-| `version`    | int  | Configuration version.|
 
 #### Response - 200 OK
+
+```json
+{
+    "tasks": [
+        {
+            "id": "eb333bc8-4d7e-4149-bacc-8feb60a94dc3",
+            "node": "a4b242c1-bc6e-417e-9708-f164e618d0c2",
+            "namespace": "dev",
+            "status": "Accepted",
+            "acceptedAt": "2024-04-10 10:14:22 +0000 UTC",
+            "resolvedAt": "2024-04-10 10:14:22 +0000 UTC"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `tasks`    | array of objects  | List of placement tasks. There will be one for each node. |
+| `tasks.id`    | string  | Task ID. |
+| `tasks.node`    | string  | ID of the node that will receive configuration. |
+| `tasks.namespace` | string | The namespace in which the configuration will be visible. |
+| `tasks.status`    | string | Task status. Possible values: *Accepted, Placed, Failed* |
+| `tasks.acceptedAt`    | string | Date and time when task was accepted. |
+| `tasks.resolvedAt`    | string | Date and time when task status was resolved to either Placed of Failed. If the current status is Accepted, this value can be ignored. |
 
 #### Response - 401 Unauthorized
 
@@ -935,46 +1564,671 @@ The endpoint for applying a configuration version to the selected nodes. The con
 #### Response - 403 Forbidden
 
  - The user is not a member of the specified organization
- - The user is not allowed to view the specified configuration.
- - The user is not allowed to put config in the specified namespace.
+
+#### Response - 400 Bad Request
+
+ - Query format invalid.
+
+ #### Response - 404 Not Found
+
+ - Configuration not found.
+
+ ### GET /apis/core/v1/configs/standalone/placements
+
+The endpoint for listing placement task statuses for the specified configuration.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "name": "app_config",
+	"organization": "c12s",
+	"version": "v1.0.0"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "tasks": [
+        {
+            "id": "eb333bc8-4d7e-4149-bacc-8feb60a94dc3",
+            "node": "a4b242c1-bc6e-417e-9708-f164e618d0c2",
+            "namespace": "dev",
+            "status": "Placed",
+            "acceptedAt": "2024-04-10 10:14:22 +0000 UTC",
+            "resolvedAt": "2024-04-10 10:14:22 +0000 UTC"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `tasks`    | array of objects  | List of placement tasks. There will be one for each node. |
+| `tasks.id`    | string  | Task ID. |
+| `tasks.node`    | string  | ID of the node that will receive configuration. |
+| `tasks.namespace` | string | The namespace in which the configuration will be visible. |
+| `tasks.status`    | string | Task status. Possible values: *Accepted, Placed, Failed* |
+| `tasks.acceptedAt`    | string | Date and time when task was accepted. |
+| `tasks.resolvedAt`    | string | Date and time when task status was resolved to either Placed of Failed. If the current status is Accepted, this value can be ignored. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ #### Response - 404 Not Found
+
+ - Configuration not found.
+
+### POST /apis/core/v1/configs/groups
+
+The endpoint for creating new configuration group version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0",
+    "paramSets": [
+        {
+			"name": "db_config",
+            "paramSet": [
+                {
+                    "key": "port",
+					"value": "1234"
+                }
+            ]
+        }
+    ],
+	"schema": {
+		"name": "nats_schema",
+		"version": "v2.1.0"
+	}
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `paramSets`    | array of objects | List of named configurations in the group. |
+| `paramSets.name`    | string | Name of the configuration. |
+| `paramSets.paramSet`    | array of objects | List of configuration parameters inside the configuration. |
+| `paramSets.paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSets.paramSet.value`    | string  | Value of the configuration parameter. |
+| `schema` | object | **[optional]** Schema against which to validate the new configuration. |
+| `schema.name` | string | **[optional]** Schema name. |
+| `schema.version` | string | **[optional]** Schema version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSets": [
+        {
+			"name": "db_config",
+            "paramSet": [
+                {
+                    "key": "port",
+					"value": "1234"
+                }
+            ]
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSets`    | array of objects | List of named configurations in the group. |
+| `paramSets.name`    | string | Name of the configuration. |
+| `paramSets.paramSet`    | array of objects | List of configuration parameters inside the configuration. |
+| `paramSets.paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSets.paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
 
 #### Response - 400 Bad request
 
- - Invalid configuration (name or version don't exist in the organization)
+ - Schema validation wasn't successful
+
+ ### GET /apis/core/v1/configs/groups/single
+
+The endpoint for getting a specified configuration group version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSets": [
+        {
+			"name": "db_config",
+            "paramSet": [
+                {
+                    "key": "port",
+					"value": "1234"
+                }
+            ]
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSets`    | array of objects | List of named configurations in the group. |
+| `paramSets.name`    | string | Name of the configuration. |
+| `paramSets.paramSet`    | array of objects | List of configuration parameters inside the configuration. |
+| `paramSets.paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSets.paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+- Configuration not found
+
+### GET /apis/core/v1/configs/groups
+
+The endpoint for listing all configuration groups inside an organization.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+
+#### Response - 200 OK
+
+```json
+{
+	"groups": [
+		{
+			"organization": "c12s",
+			"name": "app_config",
+			"version": "v1.0.0",
+			"createdAt": "2024-04-10 08:44:12 +0000 UTC",
+			"paramSets": [
+				{
+					"name": "db_config",
+					"paramSet": [
+						{
+							"key": "port",
+							"value": "1234"
+						}
+					]
+				}
+			]
+		}
+	]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `groups`    | array of objects  | List of configurations. |
+| `groups.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `groups.name`    | string  | Configuration name. |
+| `groups.version`    | string  | Configuration version. |
+| `groups.createdAt` | string | Date and time when the configuration was created. |
+| `groups.paramSets`    | array of objects | List of named configurations in the group. |
+| `groups.paramSets.name`    | string | Name of the configuration. |
+| `groups.paramSets.paramSet`    | array of objects | List of configuration parameters inside the configuration. |
+| `groups.paramSets.paramSet.key`    | string | Key of the configuration parameter. |
+| `groups.paramSets.paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ ### DELETE /apis/core/v1/configs/groups
+
+The endpoint for deleting a specified configuration group version.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "organization": "c12s",
+	"name": "app_config",
+	"version": "v1.0.0",
+    "createdAt": "2024-04-10 08:44:12 +0000 UTC",
+    "paramSets": [
+        {
+			"name": "db_config",
+            "paramSet": [
+                {
+                    "key": "port",
+					"value": "1234"
+                }
+            ]
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+| `createdAt` | string | Date and time when the configuration was created. |
+| `paramSets`    | array of objects | List of named configurations in the group. |
+| `paramSets.name`    | string | Name of the configuration. |
+| `paramSets.paramSet`    | array of objects | List of configuration parameters inside the configuration. |
+| `paramSets.paramSet.key`    | string | Key of the configuration parameter. |
+| `paramSets.paramSet.value`    | string  | Value of the configuration parameter. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+- Configuration not found
+
+ ### GET /apis/core/v1/configs/groups/diff
+
+The endpoint for getting a diff between two configuration group versions.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "reference": {
+        "name": "nats_config",
+        "organization": "c12s",
+        "version": "v1.0.0"
+    },
+    "diff": {
+        "name": "nats_config",
+        "organization": "c12s",
+        "version": "v1.0.1"
+    }
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `reference`    | object  | Reference configuration for calculating diff. |
+| `reference.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `reference.name`    | string  | Configuration name. |
+| `reference.version`    | string  | Configuration version. |
+| `diff`    | object  | Configuration whose diffs should be taken into account. |
+| `diff.organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `diff.name`    | string  | Configuration name. |
+| `diff.version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "diffs": {
+        "db_config": {
+            "diffs": [
+                {
+                    "type": "replacement",
+                    "diff": {
+                        "key": "port",
+                        "new_value": "1234",
+                        "old_value": "4444"
+                    }
+                }
+            ]
+        },
+        "media_path_config": {
+            "diffs": [
+                {
+                    "type": "deletion",
+                    "diff": {
+                        "key": "path",
+                        "value": "/media"
+                    }
+                }
+            ]
+        }
+    }
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `diffs`    | map<string, object>  | Map of diffs by configuration |
+| `diffs[key].diffs.type`    | string  | Diff type. Possible values are: *addition, deletion, replacement* |
+| `diffs[key].diffs.diff`    | map<string, string>  | Diff info. Fields present depend on the diff type. <br>**addition**: key, value <br>**deletion**: key, value <br>**replacement**: key, old_value, new_value |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 404 Not Found
+
+- Configuration not found
+
+### POST /apis/core/v1/configs/groups/placements
+
+The endpoint for disseminating a configuration group version to the query-selected nodes.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "config": {
+        "name": "app_config",
+        "organization": "c12s",
+        "version": "v1.0.0"
+    },
+    "namespace": "dev",
+    "query": [
+        {
+            "labelKey": "newlabel",
+            "shouldBe": ">",
+            "value": "20.0"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `config.organization`    | string  | Name of the organization that is the owner of the configuration as well as nodes for dissemination. |
+| `config.name`    | string  | Configuration name. |
+| `config.version`    | string  | Configuration version. |
+| `namespace`    | string | Namespace in which the configuration will be visible. |
+| `query` | array of objects | A label-based query selector. For a node to match a query, all selectors must be true. |
+| `query.labelKey` | string | Key of the label to compare. |
+| `query.shouldBe` | string | The omparison operator. Supported operators are: =, !=, <, >. |
+| `query.value` | string | Value that should be compared to the label value. |
+
+#### Response - 200 OK
+
+```json
+{
+    "tasks": [
+        {
+            "id": "eb333bc8-4d7e-4149-bacc-8feb60a94dc3",
+            "node": "a4b242c1-bc6e-417e-9708-f164e618d0c2",
+            "namespace": "dev",
+            "status": "Accepted",
+            "acceptedAt": "2024-04-10 10:14:22 +0000 UTC",
+            "resolvedAt": "2024-04-10 10:14:22 +0000 UTC"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `tasks`    | array of objects  | List of placement tasks. There will be one for each node. |
+| `tasks.id`    | string  | Task ID. |
+| `tasks.node`    | string  | ID of the node that will receive configuration. |
+| `tasks.namespace` | string | The namespace in which the configuration will be visible. |
+| `tasks.status`    | string | Task status. Possible values: *Accepted, Placed, Failed* |
+| `tasks.acceptedAt`    | string | Date and time when task was accepted. |
+| `tasks.resolvedAt`    | string | Date and time when task status was resolved to either Placed of Failed. If the current status is Accepted, this value can be ignored. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+#### Response - 400 Bad Request
+
+ - Query format invalid.
+
+ #### Response - 404 Not Found
+
+ - Configuration not found.
+
+ ### GET /apis/core/v1/configs/groups/placements
+
+The endpoint for listing placement task statuses for the specified configuration.
+
+#### Request headers
+
+ - **Authorization**: User's authentication token received upon login
+
+#### Request body
+
+```json
+{
+    "name": "app_config",
+	"organization": "c12s",
+	"version": "v1.0.0"
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `organization`    | string  | Name of the organization that is the owner of the configuration. |
+| `name`    | string  | Configuration name. |
+| `version`    | string  | Configuration version. |
+
+#### Response - 200 OK
+
+```json
+{
+    "tasks": [
+        {
+            "id": "eb333bc8-4d7e-4149-bacc-8feb60a94dc3",
+            "node": "a4b242c1-bc6e-417e-9708-f164e618d0c2",
+            "namespace": "dev",
+            "status": "Placed",
+            "acceptedAt": "2024-04-10 10:14:22 +0000 UTC",
+            "resolvedAt": "2024-04-10 10:14:22 +0000 UTC"
+        }
+    ]
+}
+```
+| property | type | description |
+|-----|-----|----|
+| `tasks`    | array of objects  | List of placement tasks. There will be one for each node. |
+| `tasks.id`    | string  | Task ID. |
+| `tasks.node`    | string  | ID of the node that will receive configuration. |
+| `tasks.namespace` | string | The namespace in which the configuration will be visible. |
+| `tasks.status`    | string | Task status. Possible values: *Accepted, Placed, Failed* |
+| `tasks.acceptedAt`    | string | Date and time when task was accepted. |
+| `tasks.resolvedAt`    | string | Date and time when task status was resolved to either Placed of Failed. If the current status is Accepted, this value can be ignored. |
+
+#### Response - 401 Unauthorized
+
+ - Invalid authentication token
+
+#### Response - 403 Forbidden
+
+ - The user is not a member of the specified organization
+
+ #### Response - 404 Not Found
+
+ - Configuration not found.
+
 
 ## Example workflow
 
 There is a `demo.json` Postman collection in the `tools` directory. It demonstrates a scenario covering all steps that need to be taken from user registration to getting a sample configuration disseminated to a subset of nodes.
 
-**Note**: Before running the collection, you need to create an environment in Postman and select it.
+**Note**: Before running the collection, you need to create an environment in Postman and select it. You should set the following variables manually:
+
+- **schema**
+
+```yaml
+properties:
+  db_config:
+    properties:
+      address:
+        type: string
+      port:
+        type: string
+    required:
+      - address
+      - port
+    type: object
+required:
+  - db_config
+type: object
+```
+
+- **config**
+
+```yaml
+db_config:
+  address: 127.0.0.1
+  port: 1234
+```
 
 After running the collection, and assuming default configuration parameters, the response from node agents should be the following:
 
 ```bash
-grpcurl -plaintext -d '{              
-    "groupId": "org/dbconfig/v1",
-    "subId": "my-app",
-    "subKind": "app"
-}' localhost:11001 proto.StarConfig/GetConfigGroup
+ grpcurl -plaintext -d '{
+    "name": "app_config",
+    "org": "c12s",
+    "version": "v1.0.1",
+    "namespace": "dev"
+}' localhost:11000 proto.StarConfig/GetConfigGroup
 {
-  "group": {
-    "id": "org/dbconfig/v1",
-    "configs": [
-      {
-        "key": "port",
-        "value": "1234"
-      }
-    ]
-  }
+  "organization": "c12s",
+  "name": "app_config",
+  "version": "v1.0.1",
+  "createdAt": "2024-04-10 10:12:32 +0000 UTC",
+  "paramSets": [
+    {
+      "name": "db_config",
+      "paramSet": [
+        {
+          "key": "port",
+          "value": "4444"
+        }
+      ]
+    },
+    {
+      "name": "media_path_config",
+      "paramSet": [
+        {
+          "key": "path",
+          "value": "/media"
+        }
+      ]
+    }
+  ]
 }
 ```
 ```bash
-grpcurl -plaintext -d '{              
-    "groupId": "org/dbconfig/v1",
-    "subId": "my-app",
-    "subKind": "app"
-}' localhost:11000 proto.StarConfig/GetConfigGroup
+grpcurl -plaintext -d '{
+    "name": "app_config",
+    "org": "c12s",
+    "version": "v1.0.1",
+    "namespace": "dev"
+}' localhost:11001 proto.StarConfig/GetConfigGroup
 ERROR:
   Code: NotFound
-  Message: not found
+  Message: config group (org: c12s, name: app_config, version: v1.0.1) not found in namespace dev
 ```

@@ -68,6 +68,9 @@ export QUASAR_ETCD_PORT=2379
 
 export SECRET_KEY="secret-key"
 
+export DB_CONSUL="consul"
+export DBPORT_CONSUL=8500
+
 # stop node agents
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest --format="{{.ID}}"))
 # stop the control plane

@@ -308,7 +308,7 @@ services:
     hostname: rate_limiter_service
     build:
       context: ..
-      dockerfile: heliosphere/rate-limiter-service/Dockerfile
+      dockerfile: ./heliosphere/rate-limiter-service/Dockerfile
     restart: always
     depends_on:
       - consul

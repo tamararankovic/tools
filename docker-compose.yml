@@ -276,6 +276,8 @@ services:
       context: ..
       dockerfile: ./lunar-gateway/Dockerfile
     restart: on-failure
+    env_file:
+      - ./../lunar-gateway/.env
     ports:
       - 5555:5555
     networks:
@@ -286,6 +288,38 @@ services:
       - iam-service
       - kuiper
       - quasar
+      - rate_limiter_service
+  
+  consul:
+    image: hashicorp/consul:latest
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent -ui -server -bind 0.0.0.0 -client 0.0.0.0 -bootstrap-expect 1"
+    volumes:
+      - ./heliosphere/consul:/consul/data
+    networks:
+      - network
+
+  rate_limiter_service:
+    image: rate_limiter_service
+    container_name: rate_limiter_service
+    hostname: rate_limiter_service
+    build:
+      context: ..
+      dockerfile: ./heliosphere/rate-limiter-service/Dockerfile
+    restart: always
+    depends_on:
+      - consul
+    environment:
+      DB: ${DB_CONSUL}
+      DBPORT: ${DBPORT_CONSUL}
+    networks:
+      - network
+    ports:
+      - 8090:8090
+      - 8080:8080
 
 networks:
   network:

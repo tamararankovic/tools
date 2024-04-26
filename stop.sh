@@ -29,7 +29,7 @@ export OORT_HOSTNAME=oort
 export NATS_HOSTNAME=nats
 export ETCD_HOSTNAME=etcd
 export KUIPER_ETCD_HOSTNAME=kuiper_etcd
-export IAM_HOSTNAME=iam-service
+export IAM_HOSTNAME=apollo
 export BLACKHOLE_HOSTNAME=queue
 export AGENT_QUEUE_HOSTNAME=agent_queue
 
@@ -49,7 +49,7 @@ export NEO4J_PLUGINS="[\"apoc\"]"
 export VAULT_HTTP_PORT=8200
 export VAULT_HOSTNAME=vault
 export VAULT_ADDR=http://0.0.0.0
-export VAULT_KEYS_FILE=/etc/iam-service/api_key.json
+export VAULT_KEYS_FILE=/etc/apollo/api_key.json
 
 export CASSANDRA_DB=apollo
 export CASSANDRA_HOSTNAME=cassandra

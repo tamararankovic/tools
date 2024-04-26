@@ -117,12 +117,12 @@ services:
     depends_on:
       - nats
 
-  iam-service:
+  apollo:
     build:
       context: ..
-      dockerfile: iam-service/iam-service/Dockerfile
-    image: iam-service
-    container_name: iam-service
+      dockerfile: apollo/Dockerfile
+    image: apollo
+    container_name: apollo
     hostname: ${IAM_HOSTNAME}
     restart: on-failure
     # expose:
@@ -130,7 +130,7 @@ services:
     # ports:
     #   - ${IAM_PORT}:${IAM_PORT}
     volumes:
-      - ./../iam-service/iam-service/vault/config/api_key.json:/etc/iam-service/api_key.json
+      - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
     environment:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
@@ -285,7 +285,7 @@ services:
     depends_on:
       - magnetar
       - oort
-      - iam-service
+      - apollo
       - kuiper
       - quasar
       - rate_limiter_service

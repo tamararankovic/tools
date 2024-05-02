@@ -73,7 +73,6 @@ export DBPORT_CONSUL=8500
 docker compose build --stop-on-error
 
 # start the control plane
-#docker compose build --no-cache
 docker compose up -d
 
 # cassandra init
@@ -97,10 +96,6 @@ done
 export STAR_HOSTNAME=star
 export OORT_HOSTNAME=oort
 export NATS_HOSTNAME=nats
-
-export REGISTRATION_SUBJECT="register"
-export NODE_ID_DIR_PATH="/etc/c12s"
-export NODE_ID_FILE_NAME="nodeid"
 
 # build the node agent
 docker build -f ../star/Dockerfile .. -t star

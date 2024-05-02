@@ -66,8 +66,11 @@ export QUASAR_ETCD_PORT=2379
 
 export SECRET_KEY="secret-key"
 
+export DB_CONSUL="consul"
+export DBPORT_CONSUL=8500
+
 # build contol plane's services
-docker compose build
+docker compose build --stop-on-error
 
 # start the control plane
 docker compose up -d

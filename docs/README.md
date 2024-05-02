@@ -2156,48 +2156,19 @@ The endpoint for listing placement task statuses for the specified configuration
 
 There is a `demo.json` Postman collection in the `tools` directory. It demonstrates a scenario covering all steps that need to be taken from user registration to getting a sample configuration disseminated to a subset of nodes.
 
-**Note**: Before running the collection, you need to create an environment in Postman and select it. You should set the following variables manually:
-
-- **schema**
-
-```yaml
-properties:
-  db_config:
-    properties:
-      address:
-        type: string
-      port:
-        type: string
-    required:
-      - address
-      - port
-    type: object
-required:
-  - db_config
-type: object
-```
-
-- **config**
-
-```yaml
-db_config:
-  address: 127.0.0.1
-  port: 1234
-```
-
 After running the collection, and assuming default configuration parameters, the response from node agents should be the following:
 
 ```bash
  grpcurl -plaintext -d '{
     "name": "app_config",
     "org": "c12s",
-    "version": "v1.0.1",
+    "version": "v1.0.0",
     "namespace": "dev"
 }' localhost:11000 proto.StarConfig/GetConfigGroup
 {
   "organization": "c12s",
   "name": "app_config",
-  "version": "v1.0.1",
+  "version": "v1.0.0",
   "createdAt": "2024-04-10 10:12:32 +0000 UTC",
   "paramSets": [
     {
@@ -2221,14 +2192,65 @@ After running the collection, and assuming default configuration parameters, the
   ]
 }
 ```
+
 ```bash
 grpcurl -plaintext -d '{
     "name": "app_config",
     "org": "c12s",
-    "version": "v1.0.1",
+    "version": "v1.0.0",
     "namespace": "dev"
 }' localhost:11001 proto.StarConfig/GetConfigGroup
 ERROR:
   Code: NotFound
-  Message: config group (org: c12s, name: app_config, version: v1.0.1) not found in namespace dev
+  Message: config group (org: c12s, name: app_config, version: v1.0.0) not found in namespace dev
+```
+
+```bash
+ grpcurl -plaintext -d '{
+    "name": "db_config",
+    "org": "c12s",
+    "version": "v1.0.0",
+    "namespace": "dev"
+}' localhost:11000 proto.StarConfig/GetStandaloneConfig
+{
+  "organization": "c12s",
+  "name": "db_config",
+  "version": "v1.0.0",
+  "createdAt": "2024-04-10 10:12:32 +0000 UTC",
+  "paramSet": [
+	{
+		"value": "1234",
+		"key": "port"
+	},
+	{
+		"key": "address",
+		"value": "127.0.0.1"
+	}
+  ],
+}
+```
+
+```bash
+ grpcurl -plaintext -d '{
+    "name": "db_config",
+    "org": "c12s",
+    "version": "v1.0.0",
+    "namespace": "dev"
+}' localhost:11001 proto.StarConfig/GetStandaloneConfig
+{
+  "organization": "c12s",
+  "name": "db_config",
+  "version": "v1.0.0",
+  "createdAt": "2024-04-10 10:12:32 +0000 UTC",
+  "paramSet": [
+	{
+		"value": "1234",
+		"key": "port"
+	},
+	{
+		"key": "address",
+		"value": "127.0.0.1"
+	}
+  ],
+}
 ```

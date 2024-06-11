@@ -21,6 +21,9 @@ export KUIPER_ETCD_PORT=2379
 export NEO4J_BOLT_PORT=7687
 export NEO4J_HTTP_PORT=7474
 export VAULT_HTTP_PORT=8200
+export STAROMETRY_HTTP_PORT=8003
+export STAROMETRY_GRPC_PORT=50055
+export PROMETHEUS_PORT=9090
 
 export STAR_HOSTNAME=star
 export MAGNETAR_HOSTNAME=magnetar
@@ -31,6 +34,7 @@ export ETCD_HOSTNAME=etcd
 export KUIPER_ETCD_HOSTNAME=kuiper_etcd
 export IAM_HOSTNAME=apollo
 export AGENT_QUEUE_HOSTNAME=agent_queue
+export PROMETHEUS_HOSTNAME=prometheus
 
 export REGISTRATION_TIMEOUT=1000
 export REGISTRATION_SUBJECT="register"
@@ -121,3 +125,26 @@ do
     --network=tools_network \
     star:latest
 done
+
+
+docker build -f ../starometry/Dockerfile .. -t starometry
+
+for ((i=1; i<=nodes; i++))
+do
+docker run -d \
+  --name starometry_"$i" \
+  --hostname starometry \
+  -p $(($STAROMETRY_HTTP_PORT + $i - 1)):${STAROMETRY_HTTP_PORT} \
+  -p $(($STAROMETRY_GRPC_PORT + $i - 1)):${STAROMETRY_GRPC_PORT} \
+  --restart always \
+  --env PROMETHEUS_URL=${PROMETHEUS_HOSTNAME} \
+  --env PROMETHEUS_PORT=${PROMETHEUS_PORT} \
+  --env APP_PORT=${STAROMETRY_HTTP_PORT} \
+  --env NATS_PORT=${NATS_PORT} \
+  --env NATS_URL=${NATS_HOSTNAME} \
+  --env GRPC_PORT=${STAROMETRY_GRPC_PORT} \
+  --mount type=bind,source="$(pwd)"/nodeconfig/star_"$i",target="$NODE_ID_DIR_PATH" \
+  --network=tools_network \
+  starometry:latest
+done
+

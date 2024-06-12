@@ -73,5 +73,9 @@ export DBPORT_CONSUL=8500
 
 # stop node agents
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest --format="{{.ID}}"))
+
+# stop starometry
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=starometry:latest))
+
 # stop the control plane
 docker-compose down -v --remove-orphans

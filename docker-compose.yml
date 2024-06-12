@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-
   magnetar:
     build:
       context: ..
@@ -167,7 +166,7 @@ services:
       - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
     cap_add:
       - IPC_LOCK
-    command: vault server -config=/vault/config/vault.json 
+    command: vault server -config=/vault/config/vault.json
     healthcheck:
       test: ["CMD", "vault", "status"]
       interval: 5s
@@ -217,7 +216,7 @@ services:
       - network
 
   etcd:
-    image: 'bitnami/etcd:latest'
+    image: "bitnami/etcd:latest"
     container_name: etcd
     hostname: ${ETCD_HOSTNAME}
     environment:
@@ -227,9 +226,9 @@ services:
       - etcd_data:/bitnami/etcd
     networks:
       - network
-    
+
   kuiper_etcd:
-    image: 'bitnami/etcd:latest'
+    image: "bitnami/etcd:latest"
     container_name: kuiper_etcd
     hostname: ${KUIPER_ETCD_HOSTNAME}
     environment:
@@ -241,7 +240,7 @@ services:
       - network
 
   quasar_etcd:
-    image: 'bitnami/etcd:latest'
+    image: "bitnami/etcd:latest"
     container_name: quasar_etcd
     hostname: ${QUASAR_ETCD_HOSTNAME}
     environment:
@@ -268,7 +267,7 @@ services:
       retries: 10
     networks:
       - network
-  
+
   lunar-gateway:
     image: lunar-gateway
     container_name: lunar-gateway
@@ -289,7 +288,7 @@ services:
       - kuiper
       - quasar
       - rate_limiter_service
-  
+
   consul:
     image: hashicorp/consul:latest
     ports:
@@ -320,6 +319,38 @@ services:
     ports:
       - 8090:8090
       - 8080:8080
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - 9091:9090
+    networks:
+      - network
+
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - 9100:9100
+    networks:
+      - network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.1
+    ports:
+      - 8081:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - network
 
 networks:
   network:

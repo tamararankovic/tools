@@ -12,3 +12,4 @@ git clone https://github.com/c12s/lunar-gateway
 # git clone https://github.com/c12s/cockpit
 # git clone https://github.com/c12s/blackhole
 git clone https://github.com/c12s/heliosphere
+git clone https://github.com/c12s/starometry

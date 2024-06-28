@@ -101,6 +101,16 @@ export STAR_HOSTNAME=star
 export OORT_HOSTNAME=oort
 export NATS_HOSTNAME=nats
 
+# Set Serf agent environment variables
+# Address for single serf agent
+export SERF_BIND_ADDRESS=0.0.0.0
+export SERF_BIND_PORT=7946        
+# Address to contact to join cluster 
+export SERF_CLUSTER_ADDRESS="star_1"
+export SERF_CLUSTER_PORT=7946 
+# String used to build tags in the serf config
+export SERF_GOSSIP_TAG="tag1:type_"
+
 # build the node agent
 docker build -f ../star/Dockerfile .. -t star
 # start node agents
@@ -120,6 +130,12 @@ do
     --env MAX_REGISTRATION_RETRIES=${MAX_REGISTER_RETRY} \
     --env NODE_ID_DIR_PATH=${NODE_ID_DIR_PATH} \
     --env NODE_ID_FILE_NAME=${NODE_ID_FILE_NAME} \
+    --env BIND_ADDRESS=${SERF_BIND_ADDRESS}\
+    --env BIND_PORT=$((SERF_BIND_PORT + i - 1)) \
+    --env JOIN_CLUSTER_ADDRESS=${SERF_CLUSTER_ADDRESS} \
+    --env JOIN_CLUSTER_PORT=${SERF_CLUSTER_PORT} \
+    --env GOSSIP_TAG=${SERF_GOSSIP_TAG}$i",tag2:val2" \
+    --env GOSSIP_NODE_NAME=${STAR_HOSTNAME}_$i \
     -p $(($STAR_PORT + $i - 1)):${STAR_PORT} \
     --hostname "$STAR_HOSTNAME" \
     --network=tools_network \

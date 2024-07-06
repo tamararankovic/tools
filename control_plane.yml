@@ -1,0 +1,397 @@
+version: "3.8"
+
+services:
+  magnetar:
+    build:
+      context: ..
+      dockerfile: magnetar/Dockerfile
+    image: magnetar
+    container_name: magnetar
+    hostname: ${MAGNETAR_HOSTNAME}
+    restart: on-failure
+    environment:
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
+      - MAGNETAR_ADDRESS=:${MAGNETAR_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
+      - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - nats
+      - etcd
+
+  oort:
+    build:
+      context: ..
+      dockerfile: oort/Dockerfile
+    image: oort
+    container_name: oort
+    hostname: ${OORT_HOSTNAME}
+    environment:
+      - OORT_PORT=${OORT_PORT}
+      - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
+      - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
+      - NEO4J_DBNAME=${NEO4J_DBNAME}
+      - NATS_HOSTNAME=${NATS_HOSTNAME}
+      - NATS_PORT=${NATS_PORT}
+    networks:
+      - network
+    depends_on:
+      - neo4j
+      - nats
+
+  kuiper:
+    build:
+      context: ..
+      dockerfile: kuiper/Dockerfile
+    image: kuiper
+    container_name: kuiper
+    hostname: ${KUIPER_HOSTNAME}
+    expose:
+      - ${KUIPER_PORT}
+    ports:
+      - ${KUIPER_PORT}:${KUIPER_PORT}
+    environment:
+      - KUIPER_ADDRESS=:${KUIPER_PORT}
+      - WEBHOOK_ADDRESS=:${KUIPER_WEBHOOK_PORT}
+      - WEBHOOK_URL=http://${KUIPER_HOSTNAME}:${KUIPER_WEBHOOK_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - QUASAR_ADDRESS=${QUASAR_HOSTNAME}:${QUASAR_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
+      - ETCD_ADDRESS=${KUIPER_ETCD_HOSTNAME}:${KUIPER_ETCD_PORT}
+      - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - nats
+      - kuiper_etcd
+      - agent_queue
+
+  quasar:
+    build:
+      context: ..
+      dockerfile: quasar/Dockerfile
+    image: quasar
+    container_name: quasar
+    hostname: ${QUASAR_HOSTNAME}
+    environment:
+      - SERVER_PORT=${QUASAR_PORT}
+      - ETCD_ADDRESS=${QUASAR_ETCD_HOSTNAME}:${QUASAR_ETCD_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+    networks:
+      - network
+    depends_on:
+      - quasar_etcd
+      - nats
+
+  agent_queue:
+    build:
+      context: ../gravity
+      dockerfile: Dockerfile
+      args:
+        - GRPC_PORT=${AGENT_QUEUE_PORT}
+    image: agent_queue
+    container_name: agent_queue
+    restart: always
+    networks:
+      - network
+    environment:
+      GRPC_PORT: ${AGENT_QUEUE_PORT}
+      NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
+    depends_on:
+      - nats
+
+  apollo:
+    build:
+      context: ..
+      dockerfile: apollo/Dockerfile
+    image: apollo
+    container_name: apollo
+    hostname: ${IAM_HOSTNAME}
+    restart: on-failure
+    volumes:
+      - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
+    environment:
+      - IAM_ADDRESS=:${IAM_PORT}
+      - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - NATS_HOSTNAME=${NATS_HOSTNAME}
+      - NATS_PORT=${NATS_PORT}
+      - SECRET_KEY=${SECRET_KEY}
+      - VAULT_HOSTNAME=${VAULT_HOSTNAME}
+      - VAULT_HTTP_PORT=${VAULT_HTTP_PORT}
+      - VAULT_KEYS_FILE=${VAULT_KEYS_FILE}
+    networks:
+      - network
+    depends_on:
+      nats:
+        condition: service_started
+      vault:
+        condition: service_started
+      cassandra:
+        condition: service_healthy
+
+  vault:
+    build:
+      context: ..
+      dockerfile: tools/vault/Dockerfile
+    container_name: vault
+    hostname: ${VAULT_HOSTNAME}
+    restart: on-failure
+    environment:
+      - VAULT_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
+      - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    networks:
+      - network
+
+  neo4j:
+    image: neo4j:4.4.12
+    container_name: neo4j
+    hostname: ${NEO4J_HOSTNAME}
+    restart: on-failure
+    environment:
+      - NEO4J_apoc_export_file_enabled=${NEO4J_apoc_export_file_enabled}
+      - NEO4J_apoc_import_file_enabled=${NEO4J_apoc_import_file_enabled}
+      - NEO4J_apoc_import_file_use__neo4j__config=${NEO4J_apoc_import_file_use__neo4j__config}
+      - NEO4JLABS_PLUGINS=${NEO4J_PLUGINS}
+      - NEO4J_dbms_connector_bolt_listen__address=:${NEO4J_BOLT_PORT}
+      - NEO4J_dbms_connector_http_listen__address=:${NEO4J_HTTP_PORT}
+      - NEO4J_dbms_security_auth__enabled=${NEO4J_AUTH_ENABLED}
+    networks:
+      - network
+    volumes:
+      - neo4jdata:/data
+      - neo4jlogs:/logs
+
+  nats:
+    image: nats:latest
+    container_name: nats
+    ports:
+      - ${NATS_PORT}:${NATS_PORT}
+      - 8222:8222
+    volumes:
+      - ./nats.conf:/etc/nats/nats-server.conf
+    hostname: ${NATS_HOSTNAME}
+    restart: on-failure
+    networks:
+      - network
+
+  etcd:
+    image: "bitnami/etcd:latest"
+    container_name: etcd
+    hostname: ${ETCD_HOSTNAME}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${ETCD_HOSTNAME}:${ETCD_PORT}
+    volumes:
+      - etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  kuiper_etcd:
+    image: "bitnami/etcd:latest"
+    container_name: kuiper_etcd
+    hostname: ${KUIPER_ETCD_HOSTNAME}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${KUIPER_ETCD_HOSTNAME}:${KUIPER_ETCD_PORT}
+    volumes:
+      - kuiper_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  quasar_etcd:
+    image: "bitnami/etcd:latest"
+    container_name: quasar_etcd
+    hostname: ${QUASAR_ETCD_HOSTNAME}
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${QUASAR_ETCD_HOSTNAME}:${QUASAR_ETCD_PORT}
+    volumes:
+      - quasar_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  cassandra:
+    build:
+      context: ..
+      dockerfile: tools/cassandra/Dockerfile
+    container_name: cassandra
+    restart: always
+    hostname: ${CASSANDRA_HOSTNAME}
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - network
+
+  lunar-gateway:
+    image: lunar-gateway
+    container_name: lunar-gateway
+    build:
+      context: ..
+      dockerfile: ./lunar-gateway/Dockerfile
+    restart: on-failure
+    env_file:
+      - ./../lunar-gateway/.env
+    ports:
+      - 5555:5555
+    networks:
+      - network
+    depends_on:
+      - magnetar
+      - oort
+      - apollo
+      - kuiper
+      - quasar
+      - rate_limiter_service
+
+  consul:
+    image: hashicorp/consul:latest
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent -ui -server -bind 0.0.0.0 -client 0.0.0.0 -bootstrap-expect 1"
+    volumes:
+      - ./heliosphere/consul:/consul/data
+    networks:
+      - network
+
+  rate_limiter_service:
+    image: rate_limiter_service
+    container_name: rate_limiter_service
+    hostname: rate_limiter_service
+    build:
+      context: ..
+      dockerfile: ./heliosphere/rate-limiter-service/Dockerfile
+    restart: always
+    depends_on:
+      - consul
+    environment:
+      DB: ${DB_CONSUL}
+      DBPORT: ${DBPORT_CONSUL}
+    networks:
+      - network
+    ports:
+      - 8090:8090
+      - 8080:8080
+
+  meridian:
+    build:
+      context: ../
+      dockerfile: ./meridian/Dockerfile
+    image: meridian
+    container_name: meridian
+    hostname: meridian
+    restart: no
+    ports:
+      - ${MERIDIAN_LISTEN_PORT}:${MERIDIAN_LISTEN_PORT}
+    environment:
+      - PULSAR_ADDRESS=${PULSAR_ADDRESS}
+      - NEO4J_ADDRESS=${MERIDIAN_NEO4J_ADDRESS}
+      - NEO4J_DB_NAME=${MERIDIAN_NEO4J_DB_NAME}
+      - LISTEN_ADDRESS=0.0.0.0:${MERIDIAN_LISTEN_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+    depends_on:
+      meridian_neo4j:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - network
+
+  meridian_neo4j:
+    image: neo4j:4.4.12
+    container_name: meridian_neo4j
+    restart: on-failure
+    ports:
+      - ${MERIDIAN_NEO4J_HTTP_PORT}:${MERIDIAN_NEO4J_HTTP_PORT}
+      - ${MERIDIAN_NEO4J_BOLT_PORT}:${MERIDIAN_NEO4J_BOLT_PORT}
+    environment:
+      - NEO4J_dbms_connector_bolt_listen__address=:${MERIDIAN_NEO4J_BOLT_PORT}
+      - NEO4J_dbms_connector_http_listen__address=:${MERIDIAN_NEO4J_HTTP_PORT}
+      - NEO4J_dbms_security_auth__enabled=${MERIDIAN_NEO4J_AUTH_ENABLED}
+    volumes:
+      - meridian_neo4j_data:/data
+    healthcheck:
+      test: wget http://localhost:7474 || exit 1
+      interval: 1s
+      timeout: 10s
+      retries: 20
+      start_period: 3s
+    networks:
+      - network
+
+  pulsar:
+    build:
+      context: ../
+      dockerfile: ./pulsar/Dockerfile
+    image: pulsar
+    container_name: pulsar
+    hostname: pulsar
+    restart: on-failure
+    environment:
+      - ETCD_ADDRESS=${PULSAR_ETCD_ADDRESS}
+      - LISTEN_ADDRESS=${PULSAR_LISTEN_ADDRESS}
+    depends_on:
+      - pulsar_etcd
+    networks:
+      - network
+
+  pulsar_etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: pulsar_etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${PULSAR_ETCD_ADDRESS}
+    volumes:
+      - pulsar_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  neo4jdata:
+    driver: local
+  neo4jlogs:
+    driver: local
+  etcd_data:
+    driver: local
+  kuiper_etcd_data:
+    driver: local
+  quasar_etcd_data:
+    driver: local
+  cassandra_data:
+    driver: local
+  vault_data:
+    driver: local
+  meridian_neo4j_data:
+    driver: local
+  meridian_neo4j_logs:
+    driver: local
+  pulsar_etcd_data:
+    driver: local

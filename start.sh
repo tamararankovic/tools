@@ -211,6 +211,8 @@ do
   docker start starometry_"$i"
 done
 
+#start healthcheck container
+
 docker build -f ../protostar/health-check/Dockerfile .. -t health-check
 
 docker run -d \

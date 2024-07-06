@@ -111,6 +111,18 @@ export SERF_CLUSTER_PORT=7946
 # String used to build tags in the serf config
 export SERF_GOSSIP_TAG="tag1:type_"
 
+
+# Export metrics agent 
+
+export CADVISOR_PORT=8081
+export CADVISOR_INTERNAL_PORT=8080
+export NODE_EXPORTER_PORT=9100
+export CADVISOR_URL=cadvisor
+export NODE_EXPORTER_URL=node_exporter
+export NODE_EXPORTER_INTERNAL_PORT=8080
+export METRICS_HTTP_PORT=8003
+export METRICS_GRPC_PORT=50055
+
 # build the node agent
 docker build -f ../star/Dockerfile .. -t star
 # start node agents
@@ -143,24 +155,53 @@ do
 done
 
 
-docker build -f ../starometry/Dockerfile .. -t starometry
+for ((i=1; i<=nodes; i++))
+do
+docker run -d \
+  --name cadvisor_"$i" \
+  --hostname cadvisor_"$i" \
+  -p $(($CADVISOR_PORT + $i - 1)):${CADVISOR_INTERNAL_PORT} \
+  --volume /:/rootfs:ro \
+  --volume /var/run:/var/run:rw \
+  --volume /sys:/sys:ro \
+  --volume /var/lib/docker/:/var/lib/docker:ro \
+  --volume /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro \
+  --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+  --network tools_network \
+  gcr.io/cadvisor/cadvisor:v0.47.1 
+done
 
 for ((i=1; i<=nodes; i++))
 do
 docker run -d \
-  --name starometry_"$i" \
-  --hostname starometry \
-  -p $(($STAROMETRY_HTTP_PORT + $i - 1)):${STAROMETRY_HTTP_PORT} \
-  -p $(($STAROMETRY_GRPC_PORT + $i - 1)):${STAROMETRY_GRPC_PORT} \
-  --restart always \
-  --env PROMETHEUS_URL=${PROMETHEUS_HOSTNAME} \
-  --env PROMETHEUS_PORT=${PROMETHEUS_PORT} \
-  --env APP_PORT=${STAROMETRY_HTTP_PORT} \
-  --env NATS_PORT=${NATS_PORT} \
-  --env NATS_URL=${NATS_HOSTNAME} \
-  --env GRPC_PORT=${STAROMETRY_GRPC_PORT} \
-  --mount type=bind,source="$(pwd)"/nodeconfig/star_"$i",target="$NODE_ID_DIR_PATH" \
-  --network=tools_network \
-  starometry:latest
+  --name node_exporter_"$i" \
+  --hostname node_exporter \
+  -p $(($NODE_EXPORTER_PORT + $i - 1)):9100 \
+  --network tools_network \
+  prom/node-exporter
 done
 
+docker build -f ../starometry/Dockerfile .. -t starometry
+
+for ((i=1; i<=nodes; i++))
+do
+  docker create \
+    --name starometry_"$i" \
+    --hostname starometry \
+    -p $(($STAROMETRY_HTTP_PORT + $i - 1)):${STAROMETRY_HTTP_PORT} \
+    -p $(($STAROMETRY_GRPC_PORT + $i - 1)):${STAROMETRY_GRPC_PORT} \
+    --restart always \
+    --env NODE_EXPORTER_URL=${NODE_EXPORTER_URL} \
+    --env NODE_EXPORTER_PORT=9100 \
+    --env CADVISOR_URL=cadvisor_"$i" \
+    --env CADVISOR_PORT=${CADVISOR_INTERNAL_PORT} \
+    --env APP_PORT=${STAROMETRY_HTTP_PORT} \
+    --env NATS_PORT=${NATS_PORT} \
+    --env NATS_URL=${NATS_HOSTNAME} \
+    --env GRPC_PORT=${STAROMETRY_GRPC_PORT} \
+    --mount type=bind,source="$(pwd)"/nodeconfig/star_"$i",target="$NODE_ID_DIR_PATH" \
+    --network tools_network \
+    starometry:latest 
+
+  docker start starometry_"$i"
+done

@@ -320,38 +320,6 @@ services:
       - 8090:8090
       - 8080:8080
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-    ports:
-      - 9091:9090
-    networks:
-      - network
-
-  node-exporter:
-    image: prom/node-exporter
-    ports:
-      - 9100:9100
-    networks:
-      - network
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.1
-    ports:
-      - 8081:8080
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - network
-
 networks:
   network:
     driver: bridge

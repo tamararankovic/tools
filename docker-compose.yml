@@ -20,6 +20,7 @@ services:
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
       - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
       - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
     networks:
       - network
     depends_on:
@@ -72,6 +73,7 @@ services:
       - AGENT_QUEUE_ADDRESS=${AGENT_QUEUE_HOSTNAME}:${AGENT_QUEUE_PORT}
       - ETCD_ADDRESS=${KUIPER_ETCD_HOSTNAME}:${KUIPER_ETCD_PORT}
       - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
     networks:
       - network
     depends_on:
@@ -91,6 +93,7 @@ services:
       - ETCD_ADDRESS=${QUASAR_ETCD_HOSTNAME}:${QUASAR_ETCD_PORT}
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - SECRET_KEY=${SECRET_KEY}
+      - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
     networks:
       - network
     depends_on:
@@ -352,6 +355,79 @@ services:
     networks:
       - network
 
+  meridian:
+    build:
+      context: ../
+      dockerfile: ./meridian/Dockerfile
+    image: meridian
+    container_name: meridian
+    hostname: meridian
+    restart: no
+    ports:
+      - ${MERIDIAN_LISTEN_PORT}:${MERIDIAN_LISTEN_PORT}
+    environment:
+      - PULSAR_ADDRESS=${PULSAR_ADDRESS}
+      - NEO4J_ADDRESS=${MERIDIAN_NEO4J_ADDRESS}
+      - NEO4J_DB_NAME=${MERIDIAN_NEO4J_DB_NAME}
+      - LISTEN_ADDRESS=0.0.0.0:${MERIDIAN_LISTEN_PORT}
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+    depends_on:
+      meridian_neo4j:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - network
+
+  meridian_neo4j:
+    image: neo4j:4.4.12
+    container_name: meridian_neo4j
+    restart: on-failure
+    ports:
+      - ${MERIDIAN_NEO4J_HTTP_PORT}:${MERIDIAN_NEO4J_HTTP_PORT}
+      - ${MERIDIAN_NEO4J_BOLT_PORT}:${MERIDIAN_NEO4J_BOLT_PORT}
+    environment:
+      - NEO4J_dbms_connector_bolt_listen__address=:${MERIDIAN_NEO4J_BOLT_PORT}
+      - NEO4J_dbms_connector_http_listen__address=:${MERIDIAN_NEO4J_HTTP_PORT}
+      - NEO4J_dbms_security_auth__enabled=${MERIDIAN_NEO4J_AUTH_ENABLED}
+    volumes:
+      - meridian_neo4j_data:/data
+    healthcheck:
+      test: wget http://localhost:7474 || exit 1
+      interval: 1s
+      timeout: 10s
+      retries: 20
+      start_period: 3s
+    networks:
+      - network
+
+  pulsar:
+    build:
+      context: ../
+      dockerfile: ./pulsar/Dockerfile
+    image: pulsar
+    container_name: pulsar
+    hostname: pulsar
+    restart: on-failure
+    environment:
+      - ETCD_ADDRESS=${PULSAR_ETCD_ADDRESS}
+      - LISTEN_ADDRESS=${PULSAR_LISTEN_ADDRESS}
+    depends_on:
+      - pulsar_etcd
+    networks:
+      - network
+
+  pulsar_etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: pulsar_etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${PULSAR_ETCD_ADDRESS}
+    volumes:
+      - pulsar_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
 networks:
   network:
     driver: bridge
@@ -370,4 +446,10 @@ volumes:
   cassandra_data:
     driver: local
   vault_data:
+    driver: local
+  meridian_neo4j_data:
+    driver: local
+  meridian_neo4j_logs:
+    driver: local
+  pulsar_etcd_data:
     driver: local

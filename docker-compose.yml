@@ -319,6 +319,18 @@ services:
     ports:
       - 8090:8090
       - 8080:8080
+      
+  prometheus_healthcheck:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2d"
+    ports:
+      - 9092:9090
+    networks:
+      - network
 
 networks:
   network:

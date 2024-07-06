@@ -8,8 +8,8 @@ else
     export $(grep -v '^#' node.env | xargs -d '\n')
 fi
 
-docker compose build -f node.yaml
-docker compose up -f node.yml
+docker compose -f node.yml build
+docker compose -f node.yml up -d
 
 # build the star agent
 docker build -f ../star/Dockerfile .. -t star
@@ -41,8 +41,8 @@ docker build -f ../starometry/Dockerfile .. -t starometry
 docker run -d \
   --name starometry \
   --hostname starometry \
-  -p ${$STAROMETRY_HTTP_PORT}:${STAROMETRY_HTTP_PORT} \
-  -p ${$STAROMETRY_GRPC_PORT}:${STAROMETRY_GRPC_PORT} \
+  -p ${STAROMETRY_HTTP_PORT}:${STAROMETRY_HTTP_PORT} \
+  -p ${STAROMETRY_GRPC_PORT}:${STAROMETRY_GRPC_PORT} \
   --restart always \
   --env PROMETHEUS_URL=${PROMETHEUS_HOSTNAME} \
   --env PROMETHEUS_PORT=${PROMETHEUS_PORT} \

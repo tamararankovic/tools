@@ -9,4 +9,4 @@ else
 fi
 
 # stop the control plane
-docker-compose down -v --remove-orphans
+docker-compose -f control_plane.yml down -v --remove-orphans

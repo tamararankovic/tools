@@ -206,11 +206,9 @@ services:
   nats:
     image: nats:latest
     container_name: nats
-    # expose:
-    #   - ${NATS_PORT}
-    # ports:
-    #   - ${NATS_PORT}:${NATS_PORT}
-    #   - 8222:8222
+    ports:
+      - ${NATS_PORT}:${NATS_PORT}
+      - 8222:8222
     volumes:
       - ./nats.conf:/etc/nats/nats-server.conf
     hostname: ${NATS_HOSTNAME}

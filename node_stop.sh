@@ -8,6 +8,8 @@ else
     export $(grep -v '^#' node.env | xargs -d '\n')
 fi
 
+docker compose -f node.yml down -v
+
 # stop star
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest))
 

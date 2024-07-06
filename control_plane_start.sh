@@ -9,10 +9,10 @@ else
 fi
 
 # build contol plane's services
-docker compose build  #--no-cache
+docker compose -f control_plane.yml build  #--no-cache
 
 # start the control plane
-docker compose up -d
+docker compose -f control_plane.yml up -d
 
 # cassandra init
 CONTAINER_NAME="cassandra"

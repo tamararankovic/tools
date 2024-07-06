@@ -73,6 +73,11 @@ export SECRET_KEY="secret-key"
 export DB_CONSUL="consul"
 export DBPORT_CONSUL=8500
 
+export PROMETHEUS_HEALTHCHECK_PORT=9090
+export NATS_SUBJECT="getMetrics"
+export PROMETHEUS_HEALTCHECK_URL="prometheus_healthcheck"
+
+
 # build contol plane's services
 docker compose build --stop-on-error
 
@@ -205,3 +210,20 @@ do
 
   docker start starometry_"$i"
 done
+
+#start healthcheck container
+
+docker build -f ../protostar/health-check/Dockerfile .. -t health-check
+
+docker run -d \
+  --name health-check \
+  --restart always \
+  -p 8013:8080 \
+  --env PORT=8080 \
+  --env NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT} \
+  --env MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT} \
+  --env PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL} \
+  --env PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT} \
+  --env NATS_SUBJECT=${NATS_SUBJECT} \
+  --network=tools_network \
+  health-check:latest

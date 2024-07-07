@@ -31,6 +31,7 @@ docker run -d \
 
 sudo rm -rf /etc/c12s
 sudo mkdir -p /etc/c12s
+sudo chmod 0777 /etc/c12s
 
 export STAR_ADDRESS=:${STAR_PORT}
 export NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}

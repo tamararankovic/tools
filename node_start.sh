@@ -25,7 +25,7 @@ docker run -d \
   --env NATS_PORT=${NATS_PORT} \
   --env NATS_URL=${NATS_HOSTNAME} \
   --env GRPC_PORT=${STAROMETRY_GRPC_PORT} \
-  --mount type=bind,source="$(pwd)"/nodeconfig/star,target="$NODE_ID_DIR_PATH" \
+  --mount type=bind,source=/etc/c12s,target="$NODE_ID_DIR_PATH" \
   --network=tools_network \
   starometry:latest
 

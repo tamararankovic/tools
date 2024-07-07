@@ -17,11 +17,13 @@ services:
       - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
       - SECRET_KEY=${SECRET_KEY}
       - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+      - GRAVITY_ADDRESS=${GRAVITY_ADDRESS}
     networks:
       - network
     depends_on:
       - nats
       - etcd
+      - agent_queue
 
   oort:
     build:

@@ -80,5 +80,11 @@ docker rm $(docker stop $(docker ps -a -q --filter ancestor=gcr.io/cadvisor/cadv
 # stop starometry
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=starometry:latest))
 
+# stop health-check
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=health-check:latest))
+
+# stop node-metrics
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=node-metrics:latest))
+
 # stop the control plane
-docker-compose down -v --remove-orphans
+docker compose down -v --remove-orphans

@@ -227,3 +227,16 @@ docker run -d \
   --env NATS_SUBJECT=${NATS_SUBJECT} \
   --network=tools_network \
   health-check:latest
+  
+  
+docker build -f ../protostar/node-metrics/Dockerfile .. -t node-metrics
+
+docker run -d \
+  --name node-metrics \
+  --restart always \
+  --env PORT=8080 \
+  -p 8086:8080 \
+  --env PROMETHEUS_URL=${PROMETHEUS_URL} \
+  --env PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT} \
+  --network=tools_network \
+  node-metrics:latest

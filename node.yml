@@ -11,13 +11,11 @@ services:
     restart: unless-stopped
     volumes:
       - '/:/host:ro,rslave'
-    ports:
-      - 9100:9100
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.1
-    ports:
-      - 8081:8080
+    network_mode: host
+    pid: host
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -38,13 +36,15 @@ services:
       - ${STAROMETRY_HTTP_PORT}:${STAROMETRY_HTTP_PORT}
       - ${STAROMETRY_GRPC_PORT}:${STAROMETRY_GRPC_PORT}
     environment:
-      - NODE_EXPORTER_URL=${NODE_EXPORTER_URL}
-      - NODE_EXPORTER_PORT=9100
-      - CADVISOR_URL=cadvisor
-      - CADVISOR_PORT=${CADVISOR_INTERNAL_PORT}
+      - NODE_EXPORTER_URL=${NODE_EXPORTER_ADDRESS}
+      - NODE_EXPORTER_PORT=${NODE_EXPORTER_PORT}
+      - CADVISOR_URL=${CADVISOR_ADDRESS}
+      - CADVISOR_PORT=${CADVISOR_PORT}
       - APP_PORT=${STAROMETRY_HTTP_PORT}
       - NATS_PORT=${NATS_PORT}
       - NATS_URL=${NATS_HOSTNAME}
       - GRPC_PORT=${STAROMETRY_GRPC_PORT}
     volumes:
       - /etc/c12s:/etc/c12s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

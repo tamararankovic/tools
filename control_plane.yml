@@ -118,9 +118,9 @@ services:
     image: apollo
     container_name: apollo
     hostname: ${IAM_HOSTNAME}
-    restart: on-failure
+    restart: always
     volumes:
-      - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
+      - ../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
     environment:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}

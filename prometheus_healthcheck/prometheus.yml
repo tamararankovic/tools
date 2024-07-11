@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+  external_labels:
+    monitor: "Monitoring"
+scrape_configs:
+  - job_name: "health-check"
+    static_configs:
+      - targets: ["health-check:8080"]
+

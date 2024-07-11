@@ -85,8 +85,17 @@ export PULSAR_LISTEN_ADDRESS=0.0.0.0:8000
 # stop node agents
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest --format="{{.ID}}"))
 
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=prom/node-exporter))
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=gcr.io/cadvisor/cadvisor:v0.47.1))
+
 # stop starometry
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=starometry:latest))
 
+# stop health-check
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=health-check:latest))
+
+# stop node-metrics
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=node-metrics:latest))
+
 # stop the control plane
-docker-compose down -v --remove-orphans
+docker compose down -v --remove-orphans

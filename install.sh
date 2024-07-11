@@ -12,5 +12,6 @@ git clone https://github.com/c12s/lunar-gateway
 git clone https://github.com/c12s/cockpit
 git clone https://github.com/c12s/heliosphere
 git clone https://github.com/c12s/starometry
+git clone https://github.com/c12s/protostar
 git clone https://github.com/c12s/meridian
 git clone https://github.com/c12s/pulsar

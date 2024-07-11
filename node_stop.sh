@@ -9,9 +9,3 @@ else
 fi
 
 docker compose -f node.yml down -v
-
-# stop star
-docker rm $(docker stop $(docker ps -a -q --filter ancestor=star:latest))
-
-# stop starometry
-docker rm $(docker stop $(docker ps -a -q --filter ancestor=starometry:latest))

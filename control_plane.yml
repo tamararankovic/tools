@@ -301,7 +301,7 @@ services:
 
   meridian:
     build:
-      context: ../
+      context: ..
       dockerfile: ./meridian/Dockerfile
     image: meridian
     container_name: meridian
@@ -347,7 +347,7 @@ services:
 
   pulsar:
     build:
-      context: ../
+      context: ..
       dockerfile: ./pulsar/Dockerfile
     image: pulsar
     container_name: pulsar
@@ -369,6 +369,55 @@ services:
       - ETCD_ADVERTISE_CLIENT_URLS=http://${PULSAR_ETCD_ADDRESS}
     volumes:
       - pulsar_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  protostar_healthcheck:
+    build:
+      context: ..
+      dockerfile: ./protostar/health-check/Dockerfile
+    image: health-check
+    container_name: health-check
+    hostname: health-check
+    restart: on-failure
+    ports:
+      - 8013:8080
+    environment:
+      - PORT=8080
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+      - NATS_SUBJECT=${NATS_SUBJECT}
+    networks:
+      - network
+
+  protostar_metrics:
+    build:
+      context: ..
+      dockerfile: ./protostar/node-metrics/Dockerfile
+    image: node-metrics
+    container_name: node-metrics
+    hostname: node-metrics
+    restart: on-failure
+    ports:
+      - 8086:8080
+    environment:
+      - PORT=8080
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+    networks:
+      - network
+
+  prometheus_healthcheck:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2d"
+    ports:
+      - 9092:9090
     networks:
       - network
 

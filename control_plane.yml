@@ -182,7 +182,7 @@ services:
       - neo4jlogs:/logs
 
   nats:
-    image: nats:latest
+    image: nats:2.10.17-alpine
     container_name: nats
     ports:
       - ${NATS_PORT}:${NATS_PORT}

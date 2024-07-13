@@ -8,5 +8,8 @@ else
     export $(grep -v '^#' control_plane.env | xargs -d '\n')
 fi
 
+# stop grafana
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=grafana/grafana))
+
 # stop the control plane
 docker-compose -f control_plane.yml down -v --remove-orphans

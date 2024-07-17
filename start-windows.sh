@@ -73,6 +73,17 @@ export SECRET_KEY="secret-key"
 export DB_CONSUL="consul"
 export DBPORT_CONSUL=8500
 
+export MERIDIAN_LISTEN_PORT=8000
+export MERIDIAN_ADDRESS=meridian:8000
+export MERIDIAN_NEO4J_ADDRESS=meridian_neo4j:7687
+export MERIDIAN_NEO4J_DB_NAME=neo4j
+export MERIDIAN_NEO4J_BOLT_PORT=7687
+export MERIDIAN_NEO4J_HTTP_PORT=7474
+export MERIDIAN_NEO4J_AUTH_ENABLED=false
+export PULSAR_ADDRESS=pulsar:8000
+export PULSAR_ETCD_ADDRESS=pulsar_etcd:2379
+export PULSAR_LISTEN_ADDRESS=0.0.0.0:8000
+
 # build contol plane's services
 docker compose build --stop-on-error
 

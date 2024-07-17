@@ -9,10 +9,6 @@ services:
     container_name: magnetar
     hostname: ${MAGNETAR_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${MAGNETAR_PORT}
-    # ports:
-    #   - ${MAGNETAR_PORT}:${MAGNETAR_PORT}
     environment:
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
@@ -21,11 +17,13 @@ services:
       - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
       - SECRET_KEY=${SECRET_KEY}
       - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+      - GRAVITY_ADDRESS=${GRAVITY_ADDRESS}
     networks:
       - network
     depends_on:
       - nats
       - etcd
+      - agent_queue
 
   oort:
     build:
@@ -34,10 +32,6 @@ services:
     image: oort
     container_name: oort
     hostname: ${OORT_HOSTNAME}
-    # expose:
-    #   - ${OORT_PORT}
-    # ports:
-    #   - ${OORT_PORT}:${OORT_PORT}
     environment:
       - OORT_PORT=${OORT_PORT}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
@@ -111,8 +105,6 @@ services:
     restart: always
     networks:
       - network
-    # ports:
-    #   - ${AGENT_QUEUE_PORT}:${AGENT_QUEUE_PORT}
     environment:
       GRPC_PORT: ${AGENT_QUEUE_PORT}
       NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
@@ -126,13 +118,9 @@ services:
     image: apollo
     container_name: apollo
     hostname: ${IAM_HOSTNAME}
-    restart: on-failure
-    # expose:
-    #   - ${IAM_PORT}
-    # ports:
-    #   - ${IAM_PORT}:${IAM_PORT}
+    restart: always
     volumes:
-      - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
+      - ../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
     environment:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}
@@ -160,10 +148,6 @@ services:
     container_name: vault
     hostname: ${VAULT_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${VAULT_HTTP_PORT}
-    # ports:
-    #   - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
     environment:
       - VAULT_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
       - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
@@ -183,12 +167,6 @@ services:
     container_name: neo4j
     hostname: ${NEO4J_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${NEO4J_HTTP_PORT}
-    #   - ${NEO4J_BOLT_PORT}
-    # ports:
-    #   - ${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}
-    #   - ${NEO4J_BOLT_PORT}:${NEO4J_BOLT_PORT}
     environment:
       - NEO4J_apoc_export_file_enabled=${NEO4J_apoc_export_file_enabled}
       - NEO4J_apoc_import_file_enabled=${NEO4J_apoc_import_file_enabled}
@@ -204,7 +182,7 @@ services:
       - neo4jlogs:/logs
 
   nats:
-    image: nats:latest
+    image: nats:2.10.17-alpine
     container_name: nats
     ports:
       - ${NATS_PORT}:${NATS_PORT}
@@ -320,22 +298,10 @@ services:
     ports:
       - 8090:8090
       - 8080:8080
-      
-  prometheus_healthcheck:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.retention.time=2d"
-    ports:
-      - 9092:9090
-    networks:
-      - network
 
   meridian:
     build:
-      context: ../
+      context: ..
       dockerfile: ./meridian/Dockerfile
     image: meridian
     container_name: meridian
@@ -381,7 +347,7 @@ services:
 
   pulsar:
     build:
-      context: ../
+      context: ..
       dockerfile: ./pulsar/Dockerfile
     image: pulsar
     container_name: pulsar
@@ -403,6 +369,54 @@ services:
       - ETCD_ADVERTISE_CLIENT_URLS=http://${PULSAR_ETCD_ADDRESS}
     volumes:
       - pulsar_etcd_data:/bitnami/etcd
+    networks:
+      - network
+
+  protostar_healthcheck:
+    build:
+      context: ..
+      dockerfile: ./protostar/health-check/Dockerfile
+    image: health-check
+    container_name: health-check
+    hostname: health-check
+    restart: on-failure
+    ports:
+      - 8013:8080
+    environment:
+      - PORT=8080
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+    networks:
+      - network
+
+  protostar_metrics:
+    build:
+      context: ..
+      dockerfile: ./protostar/node-metrics/Dockerfile
+    image: node-metrics
+    container_name: node-metrics
+    hostname: node-metrics
+    restart: on-failure
+    ports:
+      - 8086:8080
+    environment:
+      - PORT=8080
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+    networks:
+      - network
+
+  prometheus_healthcheck:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2d"
+    ports:
+      - 9092:9090
     networks:
       - network
 

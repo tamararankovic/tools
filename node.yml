@@ -23,6 +23,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/machine-id:/etc/machine-id:ro
 
   starometry:
     build:

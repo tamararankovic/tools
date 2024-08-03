@@ -9,10 +9,6 @@ services:
     container_name: magnetar
     hostname: ${MAGNETAR_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${MAGNETAR_PORT}
-    # ports:
-    #   - ${MAGNETAR_PORT}:${MAGNETAR_PORT}
     environment:
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
       - ETCD_ADDRESS=${ETCD_HOSTNAME}:${ETCD_PORT}
@@ -21,8 +17,10 @@ services:
       - APOLLO_ADDRESS=${IAM_HOSTNAME}:${IAM_PORT}
       - SECRET_KEY=${SECRET_KEY}
       - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
+      - GRAVITY_ADDRESS=${GRAVITY_ADDRESS}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.101
     depends_on:
       - nats
       - etcd
@@ -34,10 +32,6 @@ services:
     image: oort
     container_name: oort
     hostname: ${OORT_HOSTNAME}
-    # expose:
-    #   - ${OORT_PORT}
-    # ports:
-    #   - ${OORT_PORT}:${OORT_PORT}
     environment:
       - OORT_PORT=${OORT_PORT}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME}
@@ -46,7 +40,8 @@ services:
       - NATS_HOSTNAME=${NATS_HOSTNAME}
       - NATS_PORT=${NATS_PORT}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.102
     depends_on:
       - neo4j
       - nats
@@ -75,7 +70,8 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.103
     depends_on:
       - nats
       - kuiper_etcd
@@ -95,7 +91,8 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - MERIDIAN_ADDRESS=${MERIDIAN_ADDRESS}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.104
     depends_on:
       - quasar_etcd
       - nats
@@ -110,9 +107,8 @@ services:
     container_name: agent_queue
     restart: always
     networks:
-      - network
-    # ports:
-    #   - ${AGENT_QUEUE_PORT}:${AGENT_QUEUE_PORT}
+      network:
+        ipv4_address: 10.5.0.105
     environment:
       GRPC_PORT: ${AGENT_QUEUE_PORT}
       NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
@@ -127,10 +123,6 @@ services:
     container_name: apollo
     hostname: ${IAM_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${IAM_PORT}
-    # ports:
-    #   - ${IAM_PORT}:${IAM_PORT}
     volumes:
       - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
     environment:
@@ -144,7 +136,8 @@ services:
       - VAULT_HTTP_PORT=${VAULT_HTTP_PORT}
       - VAULT_KEYS_FILE=${VAULT_KEYS_FILE}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.106
     depends_on:
       nats:
         condition: service_started
@@ -160,10 +153,6 @@ services:
     container_name: vault
     hostname: ${VAULT_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${VAULT_HTTP_PORT}
-    # ports:
-    #   - ${VAULT_HTTP_PORT}:${VAULT_HTTP_PORT}
     environment:
       - VAULT_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
       - VAULT_API_ADDR=${VAULT_ADDR}:${VAULT_HTTP_PORT}
@@ -176,19 +165,14 @@ services:
       timeout: 2s
       retries: 10
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.107
 
   neo4j:
     image: neo4j:4.4.12
     container_name: neo4j
     hostname: ${NEO4J_HOSTNAME}
     restart: on-failure
-    # expose:
-    #   - ${NEO4J_HTTP_PORT}
-    #   - ${NEO4J_BOLT_PORT}
-    # ports:
-    #   - ${NEO4J_HTTP_PORT}:${NEO4J_HTTP_PORT}
-    #   - ${NEO4J_BOLT_PORT}:${NEO4J_BOLT_PORT}
     environment:
       - NEO4J_apoc_export_file_enabled=${NEO4J_apoc_export_file_enabled}
       - NEO4J_apoc_import_file_enabled=${NEO4J_apoc_import_file_enabled}
@@ -198,7 +182,8 @@ services:
       - NEO4J_dbms_connector_http_listen__address=:${NEO4J_HTTP_PORT}
       - NEO4J_dbms_security_auth__enabled=${NEO4J_AUTH_ENABLED}
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.108
     volumes:
       - neo4jdata:/data
       - neo4jlogs:/logs
@@ -214,7 +199,8 @@ services:
     hostname: ${NATS_HOSTNAME}
     restart: on-failure
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.109
 
   etcd:
     image: "bitnami/etcd:latest"
@@ -226,7 +212,8 @@ services:
     volumes:
       - etcd_data:/bitnami/etcd
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.110
 
   kuiper_etcd:
     image: "bitnami/etcd:latest"
@@ -238,7 +225,8 @@ services:
     volumes:
       - kuiper_etcd_data:/bitnami/etcd
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.111
 
   quasar_etcd:
     image: "bitnami/etcd:latest"
@@ -250,7 +238,8 @@ services:
     volumes:
       - quasar_etcd_data:/bitnami/etcd
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.112
 
   cassandra:
     build:
@@ -267,7 +256,8 @@ services:
       timeout: 10s
       retries: 10
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.113
 
   lunar-gateway:
     image: lunar-gateway
@@ -281,7 +271,8 @@ services:
     ports:
       - 5555:5555
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.114
     depends_on:
       - magnetar
       - oort
@@ -300,7 +291,8 @@ services:
     volumes:
       - ./heliosphere/consul:/consul/data
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.115
 
   rate_limiter_service:
     image: rate_limiter_service
@@ -316,22 +308,8 @@ services:
       DB: ${DB_CONSUL}
       DBPORT: ${DBPORT_CONSUL}
     networks:
-      - network
-    ports:
-      - 8090:8090
-      - 8080:8080
-      
-  prometheus_healthcheck:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.retention.time=2d"
-    ports:
-      - 9092:9090
-    networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.116
 
   meridian:
     build:
@@ -345,6 +323,8 @@ services:
       - ${MERIDIAN_LISTEN_PORT}:${MERIDIAN_LISTEN_PORT}
     environment:
       - PULSAR_ADDRESS=${PULSAR_ADDRESS}
+      - GRAVITY_ADDRESS=${GRAVITY_ADDRESS}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
       - NEO4J_ADDRESS=${MERIDIAN_NEO4J_ADDRESS}
       - NEO4J_DB_NAME=${MERIDIAN_NEO4J_DB_NAME}
       - LISTEN_ADDRESS=0.0.0.0:${MERIDIAN_LISTEN_PORT}
@@ -355,7 +335,8 @@ services:
       nats:
         condition: service_started
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.117
 
   meridian_neo4j:
     image: neo4j:4.4.12
@@ -377,7 +358,8 @@ services:
       retries: 20
       start_period: 3s
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.118
 
   pulsar:
     build:
@@ -393,7 +375,8 @@ services:
     depends_on:
       - pulsar_etcd
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.119
 
   pulsar_etcd:
     image: 'bitnami/etcd:latest'
@@ -404,11 +387,99 @@ services:
     volumes:
       - pulsar_etcd_data:/bitnami/etcd
     networks:
-      - network
+      network:
+        ipv4_address: 10.5.0.120
+
+  protostar_healthcheck:
+    build:
+      context: ..
+      dockerfile: ./protostar/health-check/Dockerfile
+    image: health-check
+    container_name: health-check
+    hostname: health-check
+    restart: on-failure
+    ports:
+      - 8013:8080
+    environment:
+      - PORT=8080
+      - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - MAGNETAR_ADDRESS=${MAGNETAR_HOSTNAME}:${MAGNETAR_PORT}
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+    networks:
+      network:
+        ipv4_address: 10.5.0.121
+
+  protostar_metrics:
+    build:
+      context: ..
+      dockerfile: ./protostar/node-metrics/Dockerfile
+    image: node-metrics
+    container_name: node-metrics
+    hostname: node-metrics
+    restart: on-failure
+    ports:
+      - 8086:8080
+    environment:
+      - PORT=8080
+      - PROMETHEUS_URL=${PROMETHEUS_HEALTCHECK_URL}
+      - PROMETHEUS_PORT=${PROMETHEUS_HEALTHCHECK_PORT}
+    networks:
+      network:
+        ipv4_address: 10.5.0.122
+
+  prometheus_healthcheck:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus_healthcheck/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2d"
+    ports:
+      - 9092:9090
+    networks:
+      network:
+        ipv4_address: 10.5.0.123
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+    # network_mode: host
+    # pid: host
+    # privileged: true
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      network:
+        ipv4_address: 10.5.0.124
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.1
+    # network_mode: host
+    # pid: host
+    # privileged: true
+    # volumes:
+    #   - /:/rootfs:ro
+    #   - /var/run:/var/run:rw
+    #   - /sys:/sys:ro
+    #   - /var/lib/docker/:/var/lib/docker:ro
+    #   - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
+    #   - /var/run/docker.sock:/var/run/docker.sock:ro
+    #   - /etc/machine-id:/etc/machine-id:ro
+    networks:
+      network:
+        ipv4_address: 10.5.0.125
 
 networks:
   network:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
 
 volumes:
   neo4jdata:

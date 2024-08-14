@@ -318,7 +318,7 @@ services:
     image: meridian
     container_name: meridian
     hostname: meridian
-    restart: no
+    restart: "no"
     ports:
       - ${MERIDIAN_LISTEN_PORT}:${MERIDIAN_LISTEN_PORT}
     environment:

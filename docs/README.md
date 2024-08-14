@@ -30,7 +30,7 @@ Configurable parameters can be found end set in the `tools/.env` file. They are 
 | Parameter | Description | Default value |
 |--|--|--|
 | NODES_NUM | The number of nodes to simulate. | 2 |
-| MAX_REGISTER_RETRY | The maximum number of registration requests a node agent will attempt. | 5 |
+| MAX_REGISTRATION_RETRIES | The maximum number of registration requests a node agent will attempt. | 5 |
 | STAR_PORT | The port number at which the node agent is listening. If there are N node agents running, each of them will be assigned a port number from the range STAR_PORT:STAR_PORT+N-1 | 11000 |
 
 ### Running
@@ -58,6 +58,8 @@ brew install findutils
 
 # to start both the control plane and node agents
 bash start.sh
+
+Note: to make script executable, run command: chmod +x start.sh 
 
 # to stop both the control plane and node agents
 bash stop.sh
@@ -106,11 +108,11 @@ None
 ```
 |property| type  |                    description                      |
 |---------|-------|-----------------------------------------------------|
-| `email`    | string  | User's email. |
-| `username`    | string  | hould be unique. Used later for login. Accepted characters: alphanumeric plus "_", "-", "." |
+| `email`    | string  | User's email. Required. Should be unique. |
+| `username`    | string  | Used later for login. Accepted characters: alphanumeric plus "_", "-", "." Required. Should be unique. |
 | `name`    | string  | First name of the user.  |
 | `surname`    | string  | Last name of the user.  |
-| `password`    | string  | Account password. |
+| `password`    | string  | Account password. Required. |
 | `org`    | string  | Name of the organization. Should be unique. If not provided, it will be created as username_default |
 
 #### Response - 200 OK
@@ -136,7 +138,9 @@ None
 #### Response - 400 Bad Request
 
  - User already exists
+ - Organization already exists
  - Invalid field values
+ - Required fields are missing
 
 ### POST /apis/core/v1/auth
 

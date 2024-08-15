@@ -10,6 +10,9 @@ On Linux:
 # go to tools directory
 cd tools
 
+# initially, install all the needed repositories
+bash install.sh
+
 # to start both the control plane and node agents
 bash start.sh
 
@@ -25,6 +28,9 @@ cd tools
 
 brew install findutils
 
+# initially, install all the needed repositories
+bash install.sh
+
 # to start both the control plane and node agents
 bash start.sh
 
@@ -37,6 +43,9 @@ On Windows, using [git bash](https://git-scm.com/downloads):
 ```bash
 # go to tools directory
 cd tools
+
+# initially, install all the needed repositories
+bash install.sh
 
 # to start both the control plane and node agents
 bash start-windows.sh

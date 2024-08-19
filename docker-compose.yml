@@ -342,9 +342,6 @@ services:
     image: neo4j:4.4.12
     container_name: meridian_neo4j
     restart: on-failure
-    ports:
-      - ${MERIDIAN_NEO4J_HTTP_PORT}:${MERIDIAN_NEO4J_HTTP_PORT}
-      - ${MERIDIAN_NEO4J_BOLT_PORT}:${MERIDIAN_NEO4J_BOLT_PORT}
     environment:
       - NEO4J_dbms_connector_bolt_listen__address=:${MERIDIAN_NEO4J_BOLT_PORT}
       - NEO4J_dbms_connector_http_listen__address=:${MERIDIAN_NEO4J_HTTP_PORT}

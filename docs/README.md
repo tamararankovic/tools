@@ -300,7 +300,7 @@ None
 |-----|-----|----|
 | `query` | array of objects  | A label-based query selector. For a node to match a query, all selectors must be true. |
 | `query.labelKey` | string | Key of the label to compare. |
-| `query.shouldBe` | string | The omparison operator. Supported operators are: =, !=, <, >. |
+| `query.shouldBe` | string | The comparison operator. Required. Supported operators are: =, !=, <, >. |
 | `query.value` | string | Value that should be compared to the label value. |
 
 #### Response - 200 OK
@@ -1156,23 +1156,24 @@ The endpoint for creating new standalone configuration version.
 
 ```json
 {
-    "organization": "c12s",
-	"name": "nats_config",
-	"version": "v1.0.1",
-    "paramSet": [
-        {
-			"key": "port",
-            "value": "8884"
-        },
-		{
-            "key": "address",
-			"value": "127.0.0.1"
-        }
-    ],
-	"schema": {
-		"name": "nats_schema",
-		"version": "v2.1.0"
-	}
+  "name": "db_config",
+  "organization": "c12s",
+  "namespace": "default",
+  "paramSet": [
+    {
+      "value": "5432",
+      "key": "port"
+    },
+    {
+      "key": "address",
+      "value": "127.0.0.1"
+    }
+  ],
+  "version": "v1.0.1",
+  "schema": {
+    "name": "schema",
+    "version": "v1.0.0"
+  }
 }
 ```
 | property | type | description |

@@ -112,6 +112,7 @@ services:
     environment:
       GRPC_PORT: ${AGENT_QUEUE_PORT}
       NATS_CONN_ADDRESS: ${NATS_HOSTNAME}:${NATS_PORT}
+      SECRET_KEY: ${SECRET_KEY}
     depends_on:
       - nats
 
@@ -329,6 +330,7 @@ services:
       - NEO4J_DB_NAME=${MERIDIAN_NEO4J_DB_NAME}
       - LISTEN_ADDRESS=0.0.0.0:${MERIDIAN_LISTEN_PORT}
       - NATS_ADDRESS=${NATS_HOSTNAME}:${NATS_PORT}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       meridian_neo4j:
         condition: service_healthy
@@ -372,6 +374,7 @@ services:
     environment:
       - ETCD_ADDRESS=${PULSAR_ETCD_ADDRESS}
       - LISTEN_ADDRESS=${PULSAR_LISTEN_ADDRESS}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - pulsar_etcd
     networks:

@@ -70,7 +70,7 @@ export QUASAR_ETCD_PORT=2379
 
 export SECRET_KEY="secret-key"
 
-export DB_CONSUL="consul"
+export DB_CONSUL=consul
 export DBPORT_CONSUL=8500
 
 export MERIDIAN_LISTEN_PORT=8000

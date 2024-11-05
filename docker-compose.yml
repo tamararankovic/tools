@@ -136,6 +136,9 @@ services:
       - VAULT_HOSTNAME=${VAULT_HOSTNAME}
       - VAULT_HTTP_PORT=${VAULT_HTTP_PORT}
       - VAULT_KEYS_FILE=${VAULT_KEYS_FILE}
+      - APOLLO_DB_CONSISTENCY=${APOLLO_DB_CONSISTENCY}
+      - APOLLO_DB_KEYSPACE=${APOLLO_DB_KEYSPACE}
+      - APOLLO_DB_CLUSTER=${APOLLO_DB_CLUSTER}
     networks:
       network:
         ipv4_address: 10.5.0.106
@@ -144,7 +147,7 @@ services:
         condition: service_started
       vault:
         condition: service_started
-      cassandra:
+      scylla:
         condition: service_healthy
 
   vault:
@@ -203,6 +206,27 @@ services:
       network:
         ipv4_address: 10.5.0.109
 
+  scylla:
+    build:
+      context: ..
+      dockerfile: tools/scylla/Dockerfile
+    container_name: scylla
+    restart: on-failure
+    volumes:
+      - scylla_data:/var/lib/scylla
+    expose:
+      - 9042
+    ports:
+      - 9042:9042
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh scylla -e 'describe cluster'"]
+      interval: 15s # This specifies how often the health check command is executed
+      timeout: 10s
+      retries: 10
+    networks:
+      network:
+        ipv4_address: 10.5.0.113
+
   etcd:
     image: "bitnami/etcd:latest"
     container_name: etcd
@@ -242,23 +266,7 @@ services:
       network:
         ipv4_address: 10.5.0.112
 
-  cassandra:
-    build:
-      context: ..
-      dockerfile: tools/cassandra/Dockerfile
-    container_name: cassandra
-    restart: always
-    hostname: ${CASSANDRA_HOSTNAME}
-    volumes:
-      - cassandra_data:/var/lib/cassandra
-    healthcheck:
-      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-    networks:
-      network:
-        ipv4_address: 10.5.0.113
+  
 
   lunar-gateway:
     image: lunar-gateway
@@ -498,7 +506,7 @@ volumes:
     driver: local
   quasar_etcd_data:
     driver: local
-  cassandra_data:
+  scylla_data:
     driver: local
   vault_data:
     driver: local

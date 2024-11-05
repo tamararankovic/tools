@@ -53,11 +53,6 @@ export VAULT_HOSTNAME=vault
 export VAULT_ADDR=http://0.0.0.0
 export VAULT_KEYS_FILE=//etc/apollo/api_key.json
 
-export CASSANDRA_DB=apollo
-export CASSANDRA_HOSTNAME=cassandra
-export CASSANDRA_DB_USERNAME=user
-export CASSANDRA_DB_PASSWORD=apollo
-
 export DB_PASSWORD=c12s_password
 export DB_USERNAME=postgres
 export DB_NAME=postgres
@@ -90,8 +85,8 @@ docker compose build --stop-on-error
 # start the control plane
 docker compose up -d
 
-# cassandra init
-CONTAINER_NAME="cassandra"
+# scylla init
+CONTAINER_NAME="scylla"
 while true; do
     # Get the health status of the container
     HEALTH=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME)
@@ -99,10 +94,10 @@ while true; do
     # Check if the container is healthy
     if [ "$HEALTH" = "healthy" ]; then
         echo "Container is healthy, running additional script"
-        winpty docker exec -it cassandra //bin/sh -c "cqlsh -f /schema.cql"
+        winpty docker exec -it scylla //bin/sh -c "cqlsh -f /scylla_schema.cql"
         break  # Exit the loop when the container is healthy
     else
-        echo "Cassandra is not healthy, waiting for 5 seconds before checking again"
+        echo "scylla is not healthy, waiting for 5 seconds before checking again"
         sleep 5
     fi
 done

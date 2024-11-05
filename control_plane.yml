@@ -138,7 +138,7 @@ services:
         condition: service_started
       vault:
         condition: service_started
-      cassandra:
+      scylla:
         condition: service_healthy
 
   vault:
@@ -230,18 +230,21 @@ services:
     networks:
       - network
 
-  cassandra:
+  scylla:
     build:
       context: ..
-      dockerfile: tools/cassandra/Dockerfile
-    container_name: cassandra
-    restart: always
-    hostname: ${CASSANDRA_HOSTNAME}
+      dockerfile: tools/scylla/Dockerfile
+    container_name: scylla
+    restart: on-failure
     volumes:
-      - cassandra_data:/var/lib/cassandra
+      - scylla_data:/var/lib/scylla
+    expose:
+      - 9042
+    ports:
+      - 9042:9042
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
-      interval: 15s
+      test: ["CMD-SHELL", "cqlsh scylla -e 'describe cluster'"]
+      interval: 15s # This specifies how often the health check command is executed
       timeout: 10s
       retries: 10
     networks:
@@ -440,7 +443,7 @@ volumes:
     driver: local
   quasar_etcd_data:
     driver: local
-  cassandra_data:
+  scylla_data:
     driver: local
   vault_data:
     driver: local

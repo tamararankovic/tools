@@ -14,8 +14,8 @@ docker compose build  #--no-cache
 # start the control plane
 docker compose up -d
 
-# cassandra init
-CONTAINER_NAME="cassandra"
+# scylla init
+CONTAINER_NAME="scylla"
 while true; do
     # Get the health status of the container
     HEALTH=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME)
@@ -23,10 +23,10 @@ while true; do
     # Check if the container is healthy
     if [ "$HEALTH" = "healthy" ]; then
         echo "Container is healthy, running additional script"
-        docker exec -it cassandra /bin/sh -c "cqlsh -f /schema.cql"
+        docker exec -it scylla /bin/sh -c "cqlsh -f /scylla_schema.cql"
         break  # Exit the loop when the container is healthy
     else
-        echo "Cassandra is not healthy, waiting for 5 seconds before checking again"
+        echo "Scylla is not healthy, waiting for 5 seconds before checking again"
         sleep 5
     fi
 done

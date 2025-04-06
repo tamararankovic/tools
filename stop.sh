@@ -18,6 +18,7 @@ docker rm $(docker stop $(docker ps -a -q --filter ancestor=starometry:latest))
 
 # stop grafana
 docker rm $(docker stop $(docker ps -a -q --filter ancestor=grafana/grafana))
+docker rm $(docker stop $(docker ps -a -q --filter ancestor=tardis-grafana))
 
 # stop other
 docker compose down -v --remove-orphans

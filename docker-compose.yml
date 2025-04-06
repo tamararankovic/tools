@@ -125,7 +125,7 @@ services:
     hostname: ${IAM_HOSTNAME}
     restart: on-failure
     volumes:
-      - ./../apollo/vault/config/api_key.json:/etc/apollo/api_key.json
+      - ./vault/api_key.json:/etc/apollo/api_key.json
     environment:
       - IAM_ADDRESS=:${IAM_PORT}
       - OORT_ADDRESS=${OORT_HOSTNAME}:${OORT_PORT}

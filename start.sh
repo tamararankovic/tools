@@ -35,7 +35,9 @@ done
 docker run -d --name=grafana \
     -p 3000:3000 \
     --network tools_network \
-    -v grafana-data:/var/lib/grafana \
+    -v ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml \
+    -v ./grafana/dashboards:/var/lib/grafana/dashboards \
+    -v ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/main.yaml \
     grafana/grafana
 
 # build the node agent

@@ -131,6 +131,9 @@ services:
       - VAULT_HOSTNAME=${VAULT_HOSTNAME}
       - VAULT_HTTP_PORT=${VAULT_HTTP_PORT}
       - VAULT_KEYS_FILE=${VAULT_KEYS_FILE}
+      - APOLLO_DB_CONSISTENCY=${APOLLO_DB_CONSISTENCY}
+      - APOLLO_DB_KEYSPACE=${APOLLO_DB_KEYSPACE}
+      - APOLLO_DB_CLUSTER=${APOLLO_DB_CLUSTER}
     networks:
       - network
     depends_on:
@@ -303,7 +306,7 @@ services:
       - network
     ports:
       - 8090:8090
-      - 8080:8080
+      # - 8080:8080
 
   meridian:
     build:

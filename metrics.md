@@ -1,0 +1,389 @@
+# Single-node setup
+
+This setup is useful mainly for testing purposes. The control plane (managing swarms) and simulated node agents are all running on a single machine inside containers.
+
+## Running
+
+The number of simulates nodes can be configured by setting the NODES_NUM variable in .env file that is inside tools directory.
+
+```bash
+git clone https://codelab.fct.unl.pt/di/research/tardis/wp6/public/configuration-management
+
+# go to tools directory
+cd tools
+
+# to start both the control plane and node agents
+bash start.sh
+
+# to stop both the control plane and node agents
+bash stop.sh
+```
+
+# Multi-node setup
+
+Requires all nodes to have Docker installed.
+
+## Running the control plane
+
+```bash
+
+git clone https://codelab.fct.unl.pt/di/research/tardis/wp6/public/configuration-management
+
+# go to tools directory
+cd tools
+
+# to start the control plane
+bash control_plane_start.sh
+
+# to stop the control plane
+bash control_plane_stop.sh
+```
+
+## Setting up nodes
+
+```bash
+git clone https://codelab.fct.unl.pt/di/research/tardis/wp6/public/configuration-management
+
+# go to tools directory
+cd tools
+
+# set environment variables in the node.env file
+# NATS_HOSTNAME - hostname/address of the node where the control plane is running
+# NATS_ADDRESS - hostname/address of the node where the control plane is running + port 4222 (if not changed in the control plane configuration)
+# BIND_ADDRESS - address at which the node is reachable for other nodes
+# other variables can also be changed (but that is optional)
+
+# to start the node agents
+bash node_start.sh
+
+# to stop the node agents
+bash node_stop.sh
+```
+
+# Registering target apps with custom metrics
+
+```bash
+
+# EXAMPLE APP
+
+# source code of the demo app can be found here
+# https://codelab.fct.unl.pt/di/research/tardis/wp6/public/configuration-management/-/blob/main/starometry/cmd/example_prom/main.go
+
+cd starometry
+docker build ../ -f Dockerfile-demo-prom -t demo-app
+# single-node setup
+docker run --network tools_network -d --hostname demo-app demo-app
+# multi-node setup
+docker run --network tools_default -d --hostname demo-app demo-app
+grpcurl -plaintext -d '{"external_applications": [{"address": "demo-app:2223", "interface": "prom"}]}' -import-path pkg/api/proto -proto metrics.proto 127.0.0.1:50055 proto.Metrics.PostNewExternalApplicationsList
+
+```
+
+# Accessing metrics from the control plane
+
+Prometheus is accessible at http://localhost:9092 (the list of all collected metrics can be explored via the Prometheus UI)
+Grafana is accessible at http://localhost:3000 (credentials admin/admin)
+
+# Infrastructure- and container-related metrics collected by default
+
+```
+cadvisor_version_info
+container_blkio_device_usage_total
+container_cpu_load_average_10s
+container_cpu_system_seconds_total
+container_cpu_usage_seconds_total
+container_cpu_user_seconds_total
+container_fs_inodes_free
+container_fs_inodes_total
+container_fs_io_current
+container_fs_io_time_seconds_total
+container_fs_io_time_weighted_seconds_total
+container_fs_limit_bytes
+container_fs_read_seconds_total
+container_fs_reads_bytes_total
+container_fs_reads_merged_total
+container_fs_reads_total
+container_fs_sector_reads_total
+container_fs_sector_writes_total
+container_fs_usage_bytes
+container_fs_write_seconds_total
+container_fs_writes_bytes_total
+container_fs_writes_merged_total
+container_fs_writes_total
+container_last_seen
+container_memory_cache
+container_memory_failcnt
+container_memory_failures_total
+container_memory_mapped_file
+container_memory_max_usage_bytes
+container_memory_rss
+container_memory_swap
+container_memory_usage_bytes
+container_memory_working_set_bytes
+container_network_receive_bytes_total
+container_network_receive_errors_total
+container_network_receive_packets_dropped_total
+container_network_receive_packets_total
+container_network_transmit_bytes_total
+container_network_transmit_errors_total
+container_network_transmit_packets_dropped_total
+container_network_transmit_packets_total
+container_oom_events_total
+container_scrape_error
+container_spec_cpu_period
+container_spec_cpu_shares
+container_spec_memory_limit_bytes
+container_spec_memory_reservation_limit_bytes
+container_spec_memory_swap_limit_bytes
+container_start_time_seconds
+container_tasks_state
+
+machine_cpu_physical_cores
+machine_cpu_sockets
+machine_memory_bytes
+machine_nvm_avg_power_budget_watts
+machine_nvm_capacity
+machine_scrape_error
+
+node_arp_entries
+node_boot_time_seconds
+node_context_switches_total
+node_cooling_device_cur_state
+node_cooling_device_max_state
+node_cpu_guest_seconds_total
+node_cpu_seconds_total
+node_disk_discard_time_seconds_total
+node_disk_discarded_sectors_total
+node_disk_discards_completed_total
+node_disk_discards_merged_total
+node_disk_flush_requests_time_seconds_total
+node_disk_flush_requests_total
+node_disk_info
+node_disk_io_now
+node_disk_io_time_seconds_total
+node_disk_io_time_weighted_seconds_total
+node_disk_read_bytes_total
+node_disk_read_time_seconds_total
+node_disk_reads_completed_total
+node_disk_reads_merged_total
+node_disk_write_time_seconds_total
+node_disk_writes_completed_total
+node_disk_writes_merged_total
+node_disk_written_bytes_total
+node_entropy_available_bits
+node_entropy_pool_size_bits
+node_exporter_build_info
+node_filefd_allocated
+node_filefd_maximum
+node_filesystem_avail_bytes
+node_filesystem_device_error
+node_filesystem_files
+node_filesystem_files_free
+node_filesystem_free_bytes
+node_filesystem_mount_info
+node_filesystem_purgeable_bytes
+node_filesystem_readonly
+node_filesystem_size_bytes
+node_forks_total
+node_intr_total
+node_ipvs_connections_total
+node_ipvs_incoming_bytes_total
+node_ipvs_incoming_packets_total
+node_ipvs_outgoing_bytes_total
+node_ipvs_outgoing_packets_total
+node_load1
+node_load15
+node_load5
+node_memory_Active_anon_bytes
+node_memory_Active_bytes
+node_memory_Active_file_bytes
+node_memory_AnonHugePages_bytes
+node_memory_AnonPages_bytes
+node_memory_Bounce_bytes
+node_memory_Buffers_bytes
+node_memory_Cached_bytes
+node_memory_CommitLimit_bytes
+node_memory_Committed_AS_bytes
+node_memory_DirectMap2M_bytes
+node_memory_DirectMap4k_bytes
+node_memory_Dirty_bytes
+node_memory_Inactive_anon_bytes
+node_memory_Inactive_bytes
+node_memory_Inactive_file_bytes
+node_memory_KernelStack_bytes
+node_memory_Mapped_bytes
+node_memory_MemAvailable_bytes
+node_memory_MemFree_bytes
+node_memory_MemTotal_bytes
+node_memory_Mlocked_bytes
+node_memory_NFS_Unstable_bytes
+node_memory_PageTables_bytes
+node_memory_Percpu_bytes
+node_memory_SReclaimable_bytes
+node_memory_SUnreclaim_bytes
+node_memory_ShmemHugePages_bytes
+node_memory_ShmemPmdMapped_bytes
+node_memory_Shmem_bytes
+node_memory_Slab_bytes
+node_memory_SwapCached_bytes
+node_memory_SwapFree_bytes
+node_memory_SwapTotal_bytes
+node_memory_Unevictable_bytes
+node_memory_VmallocChunk_bytes
+node_memory_VmallocTotal_bytes
+node_memory_VmallocUsed_bytes
+node_memory_WritebackTmp_bytes
+node_memory_Writeback_bytes
+node_netstat_Icmp6_InErrors
+node_netstat_Icmp6_InMsgs
+node_netstat_Icmp6_OutMsgs
+node_netstat_Icmp_InErrors
+node_netstat_Icmp_InMsgs
+node_netstat_Icmp_OutMsgs
+node_netstat_Ip6_InOctets
+node_netstat_Ip6_OutOctets
+node_netstat_IpExt_InOctets
+node_netstat_IpExt_OutOctets
+node_netstat_Ip_Forwarding
+node_netstat_TcpExt_ListenDrops
+node_netstat_TcpExt_ListenOverflows
+node_netstat_TcpExt_SyncookiesFailed
+node_netstat_TcpExt_SyncookiesRecv
+node_netstat_TcpExt_SyncookiesSent
+node_netstat_TcpExt_TCPOFOQueue
+node_netstat_TcpExt_TCPRcvQDrop
+node_netstat_TcpExt_TCPSynRetrans
+node_netstat_TcpExt_TCPTimeouts
+node_netstat_Tcp_ActiveOpens
+node_netstat_Tcp_CurrEstab
+node_netstat_Tcp_InErrs
+node_netstat_Tcp_InSegs
+node_netstat_Tcp_OutRsts
+node_netstat_Tcp_OutSegs
+node_netstat_Tcp_PassiveOpens
+node_netstat_Tcp_RetransSegs
+node_netstat_Udp6_InDatagrams
+node_netstat_Udp6_InErrors
+node_netstat_Udp6_NoPorts
+node_netstat_Udp6_OutDatagrams
+node_netstat_Udp6_RcvbufErrors
+node_netstat_Udp6_SndbufErrors
+node_netstat_UdpLite6_InErrors
+node_netstat_UdpLite_InErrors
+node_netstat_Udp_InDatagrams
+node_netstat_Udp_InErrors
+node_netstat_Udp_NoPorts
+node_netstat_Udp_OutDatagrams
+node_netstat_Udp_RcvbufErrors
+node_netstat_Udp_SndbufErrors
+node_network_address_assign_type
+node_network_carrier
+node_network_carrier_changes_total
+node_network_carrier_down_changes_total
+node_network_carrier_up_changes_total
+node_network_device_id
+node_network_dormant
+node_network_flags
+node_network_iface_id
+node_network_iface_link
+node_network_iface_link_mode
+node_network_info
+node_network_mtu_bytes
+node_network_name_assign_type
+node_network_net_dev_group
+node_network_protocol_type
+node_network_receive_bytes_total
+node_network_receive_compressed_total
+node_network_receive_drop_total
+node_network_receive_errs_total
+node_network_receive_fifo_total
+node_network_receive_frame_total
+node_network_receive_multicast_total
+node_network_receive_nohandler_total
+node_network_receive_packets_total
+node_network_speed_bytes
+node_network_transmit_bytes_total
+node_network_transmit_carrier_total
+node_network_transmit_colls_total
+node_network_transmit_compressed_total
+node_network_transmit_drop_total
+node_network_transmit_errs_total
+node_network_transmit_fifo_total
+node_network_transmit_packets_total
+node_network_transmit_queue_length
+node_network_up
+node_nf_conntrack_entries
+node_nf_conntrack_entries_limit
+node_nf_conntrack_stat_drop
+node_nf_conntrack_stat_early_drop
+node_nf_conntrack_stat_found
+node_nf_conntrack_stat_ignore
+node_nf_conntrack_stat_insert
+node_nf_conntrack_stat_insert_failed
+node_nf_conntrack_stat_invalid
+node_nf_conntrack_stat_search_restart
+node_os_info
+node_procs_blocked
+node_procs_running
+node_scrape_collector_duration_seconds
+node_scrape_collector_success
+node_selinux_enabled
+node_sockstat_FRAG6_inuse
+node_sockstat_FRAG6_memory
+node_sockstat_FRAG_inuse
+node_sockstat_FRAG_memory
+node_sockstat_RAW6_inuse
+node_sockstat_RAW_inuse
+node_sockstat_TCP6_inuse
+node_sockstat_TCP_alloc
+node_sockstat_TCP_inuse
+node_sockstat_TCP_mem
+node_sockstat_TCP_mem_bytes
+node_sockstat_TCP_orphan
+node_sockstat_TCP_tw
+node_sockstat_UDP6_inuse
+node_sockstat_UDPLITE6_inuse
+node_sockstat_UDPLITE_inuse
+node_sockstat_UDP_inuse
+node_sockstat_UDP_mem
+node_sockstat_UDP_mem_bytes
+node_sockstat_sockets_used
+node_softnet_backlog_len
+node_softnet_cpu_collision_total
+node_softnet_dropped_total
+node_softnet_flow_limit_count_total
+node_softnet_processed_total
+node_softnet_received_rps_total
+node_softnet_times_squeezed_total
+node_textfile_scrape_error
+node_time_clocksource_available_info
+node_time_clocksource_current_info
+node_time_seconds
+node_time_zone_offset_seconds
+node_timex_estimated_error_seconds
+node_timex_frequency_adjustment_ratio
+node_timex_loop_time_constant
+node_timex_maxerror_seconds
+node_timex_offset_seconds
+node_timex_pps_calibration_total
+node_timex_pps_error_total
+node_timex_pps_frequency_hertz
+node_timex_pps_jitter_seconds
+node_timex_pps_jitter_total
+node_timex_pps_shift_seconds
+node_timex_pps_stability_exceeded_total
+node_timex_pps_stability_hertz
+node_timex_status
+node_timex_sync_status
+node_timex_tai_offset_seconds
+node_timex_tick_seconds
+node_udp_queues
+node_uname_info
+node_vmstat_oom_kill
+node_vmstat_pgfault
+node_vmstat_pgmajfault
+node_vmstat_pgpgin
+node_vmstat_pgpgout
+node_vmstat_pswpin
+node_vmstat_pswpout
+```
